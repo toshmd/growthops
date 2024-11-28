@@ -39,7 +39,7 @@ const MyProcesses = () => {
             ...(process.reportingDates || []),
             {
               date,
-              status: "pending",
+              status: "pending" as const,
               notes: "",
               updatedBy: "Current User", // In a real app, this would come from auth
               updatedAt: new Date(),
