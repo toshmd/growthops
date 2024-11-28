@@ -1,8 +1,16 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -12,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import Categories from "@/components/Categories";
 
 const intervals = [
   "daily",
@@ -21,86 +30,147 @@ const intervals = [
   "quarterly",
   "biannual",
   "annual",
-];
+] as const;
+
+const formSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().min(1, "Description is required"),
+  interval: z.enum(intervals, {
+    required_error: "Please select an interval",
+  }),
+  owner: z.string().min(1, "Owner is required"),
+  categories: z.array(z.string()),
+});
 
 const CreateProcess = () => {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [interval, setInterval] = useState("");
-  const [owner, setOwner] = useState("");
   const { toast } = useToast();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      description: "",
+      owner: "",
+      categories: [],
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
     // In a real app, this would save to a backend
+    console.log(values);
     toast({
       title: "Process Created",
       description: "The new process has been successfully created.",
     });
+    form.reset();
   };
+
+  // Mock existing categories - in a real app, these would come from the backend
+  const existingCategories = ["HR", "Finance", "Operations", "IT", "Marketing"];
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container max-w-2xl">
-        <Card className="p-6">
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
           <h1 className="text-2xl font-bold mb-6">Create New Process</h1>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="title">Process Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter process title"
-                required
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Process Title</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter process title" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter process description"
-                required
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter process description"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="interval">Interval</Label>
-              <Select value={interval} onValueChange={setInterval}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select interval" />
-                </SelectTrigger>
-                <SelectContent>
-                  {intervals.map((int) => (
-                    <SelectItem key={int} value={int}>
-                      {int.charAt(0).toUpperCase() + int.slice(1)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="owner">Process Owner</Label>
-              <Input
-                id="owner"
-                value={owner}
-                onChange={(e) => setOwner(e.target.value)}
-                placeholder="Enter owner name"
-                required
+              <FormField
+                control={form.control}
+                name="interval"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Interval</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select interval" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {intervals.map((interval) => (
+                          <SelectItem key={interval} value={interval}>
+                            {interval.charAt(0).toUpperCase() + interval.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
 
-            <div className="pt-4">
+              <FormField
+                control={form.control}
+                name="owner"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Process Owner</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter owner name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="categories"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Categories</FormLabel>
+                    <FormControl>
+                      <Categories
+                        selectedCategories={field.value}
+                        onCategoriesChange={field.onChange}
+                        existingCategories={existingCategories}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <Button type="submit" className="w-full">
                 Create Process
               </Button>
-            </div>
-          </form>
-        </Card>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
   );
