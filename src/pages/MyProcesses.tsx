@@ -41,9 +41,9 @@ const MyProcesses = () => {
               date,
               status: "pending" as const,
               notes: "",
-              updatedBy: "Current User", // In a real app, this would come from auth
+              updatedBy: "Current User",
               updatedAt: new Date(),
-              actionItems: [], // Add empty actionItems array to fix the type error
+              actionItems: [],
             },
           ];
           return {
@@ -78,8 +78,8 @@ const MyProcesses = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container">
-        <h1 className="text-2xl font-bold mb-6">My Processes</h1>
+      <div className="container max-w-4xl mx-auto px-4">
+        <h1 className="text-2xl font-bold mb-8">My Processes</h1>
         <div className="space-y-6">
           {processes.map((process) => (
             <ProcessCard
