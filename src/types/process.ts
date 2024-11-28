@@ -1,3 +1,5 @@
+import { Interval } from "@/utils/dateCalculations";
+
 export type ActionItem = {
   id: string;
   text: string;
@@ -18,7 +20,7 @@ export type Process = {
   id: number;
   title: string;
   description: string;
-  interval: 'weekly' | 'monthly';
+  interval: Interval;
   nextDue: string;
   status: string;
   startDate: Date;

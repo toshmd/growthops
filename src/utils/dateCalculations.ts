@@ -8,7 +8,7 @@ import {
   startOfDay,
 } from "date-fns";
 
-type Interval = "daily" | "weekly" | "biweekly" | "monthly" | "quarterly" | "biannual" | "annual";
+export type Interval = "daily" | "weekly" | "biweekly" | "monthly" | "quarterly" | "biannual" | "annual";
 
 export const calculateNextDate = (currentDate: Date, interval: Interval): Date => {
   let nextDate = startOfDay(currentDate);
