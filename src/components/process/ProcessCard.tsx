@@ -3,8 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Process } from "@/types/process";
 import ProcessReportingDates from "./ProcessReportingDates";
 import { Clock, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
+import { isPast } from "date-fns";
 
 interface ProcessCardProps {
   process: Process;
@@ -26,6 +26,22 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
     }
   };
 
+  const calculateProcessStatus = () => {
+    if (!process.reportingDates || process.reportingDates.length === 0) return "incomplete";
+    
+    const hasOverdue = process.reportingDates.some(date => 
+      isPast(date.date) && date.status !== "completed"
+    );
+    
+    if (hasOverdue) return "incomplete";
+    
+    const allCompleted = process.reportingDates.every(date => 
+      !isPast(date.date) || date.status === "completed"
+    );
+    
+    return allCompleted ? "done" : "incomplete";
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "done":
@@ -37,51 +53,23 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
     }
   };
 
-  const handleQuickStatusUpdate = (newStatus: string) => {
-    onUpdateStatus(process.id, newStatus, "Status updated via quick action");
-    toast({
-      title: "Status Updated",
-      description: `Process status changed to ${newStatus}`,
-    });
-  };
-
   return (
-    <Card className={`p-6 mb-6 transition-all hover:shadow-md ${getStatusColor(process.status)}`}>
+    <Card className={`p-6 mb-6 transition-all hover:shadow-md ${getStatusColor(calculateProcessStatus())}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-start gap-3">
-          {getStatusIcon(process.status)}
+          {getStatusIcon(calculateProcessStatus())}
           <div>
             <h2 className="text-xl font-semibold">{process.title}</h2>
             <p className="text-gray-600 mt-1">{process.description}</p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Badge 
-            variant={process.status === "done" ? "default" : "secondary"}
-            className="flex items-center gap-1"
-          >
-            <Calendar className="h-4 w-4" />
-            {process.interval}
-          </Badge>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickStatusUpdate("incomplete")}
-              className="text-warning hover:text-warning"
-            >
-              Mark Incomplete
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleQuickStatusUpdate("done")}
-              className="text-success hover:text-success"
-            >
-              Mark Complete
-            </Button>
-          </div>
-        </div>
+        <Badge 
+          variant={calculateProcessStatus() === "done" ? "default" : "secondary"}
+          className="flex items-center gap-1"
+        >
+          <Calendar className="h-4 w-4" />
+          {process.interval}
+        </Badge>
       </div>
 
       <ProcessReportingDates 

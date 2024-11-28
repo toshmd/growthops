@@ -1,16 +1,10 @@
-import { format } from "date-fns";
+import { format, isPast } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { ReportingDateStatus } from "@/types/process";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useState } from "react";
 import ActionItems from "./ActionItems";
 
@@ -23,60 +17,63 @@ interface ReportingDateCardProps {
 
 const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDateCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState(status?.status || "pending");
   const [notes, setNotes] = useState(status?.notes || "");
   const [actionItems, setActionItems] = useState(status?.actionItems || []);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed":
-        return "text-green-600";
-      case "blocked":
-        return "text-red-600";
-      default:
-        return "text-yellow-600";
-    }
-  };
-
-  const handleUpdate = () => {
+  const handleQuickStatusUpdate = (newStatus: "completed" | "blocked" | "pending") => {
     onUpdate();
     setIsEditing(false);
   };
+
+  const getStatusIcon = (status?: string) => {
+    if (!status || status === "pending") return <Clock className="h-4 w-4 text-warning" />;
+    if (status === "completed") return <CheckCircle2 className="h-4 w-4 text-success" />;
+    return <XCircle className="h-4 w-4 text-destructive" />;
+  };
+
+  const isOverdue = isPast(date) && (!status || status.status !== "completed");
 
   return (
     <div className={`p-4 rounded-lg border ${statusColor}`}>
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-2">
             <p className="font-medium">{format(date, "PPP")}</p>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              {isEditing ? "Cancel" : "Update"}
-            </Button>
+            {!isEditing && (
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleQuickStatusUpdate("completed")}
+                  className="text-success hover:text-success hover:bg-success/10"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleQuickStatusUpdate("blocked")}
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
           
-          {isEditing ? (
+          {status && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              {getStatusIcon(status.status)}
+              <span>{status.status === "completed" ? "Completed" : 
+                     status.status === "blocked" ? "Blocked" : "Pending"}</span>
+              {isOverdue && (
+                <Badge variant="destructive" className="ml-2">Overdue</Badge>
+              )}
+            </div>
+          )}
+
+          {isEditing && (
             <div className="mt-4 space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Status</label>
-                <Select
-                  value={selectedStatus}
-                  onValueChange={(value) => setSelectedStatus(value as "pending" | "completed" | "blocked")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="completed" className="text-green-600">Complete</SelectItem>
-                    <SelectItem value="pending" className="text-yellow-600">Pending</SelectItem>
-                    <SelectItem value="blocked" className="text-red-600">Blocked</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
               <div>
                 <label className="text-sm font-medium mb-1 block">Notes</label>
                 <Textarea
@@ -95,52 +92,23 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
                 />
               </div>
               
-              <Button onClick={handleUpdate} className="w-full">
-                Save Changes
-              </Button>
-            </div>
-          ) : (
-            status && (
-              <div className="mt-2 text-sm text-gray-600">
-                <p>
-                  Status:{" "}
-                  <Badge 
-                    variant={status.status === "completed" ? "default" : "secondary"}
-                    className={getStatusColor(status.status)}
-                  >
-                    {status.status === "completed" ? "Complete" : 
-                     status.status === "blocked" ? "Blocked" : "Pending"}
-                  </Badge>
-                </p>
-                {status.notes && <p className="mt-1">Notes: {status.notes}</p>}
-                {status.actionItems && status.actionItems.length > 0 && (
-                  <div className="mt-2">
-                    <p className="font-medium mb-1">Action Items:</p>
-                    <ul className="space-y-1">
-                      {status.actionItems.map((item) => (
-                        <li key={item.id} className="flex items-center gap-2">
-                          <Checkbox
-                            checked={item.completed}
-                            disabled
-                            id={`view-${item.id}`}
-                          />
-                          <label
-                            htmlFor={`view-${item.id}`}
-                            className={item.completed ? "line-through text-gray-500" : ""}
-                          >
-                            {item.text}
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <p className="mt-1 text-xs">
-                  Updated by {status.updatedBy} on{" "}
-                  {format(status.updatedAt || new Date(), "PPp")}
-                </p>
+              <div className="flex gap-2">
+                <Button onClick={() => handleQuickStatusUpdate("completed")} className="flex-1">
+                  Save Changes
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditing(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
               </div>
-            )
+            </div>
+          )}
+
+          {!isEditing && status?.notes && (
+            <p className="mt-2 text-sm text-gray-600">Notes: {status.notes}</p>
           )}
         </div>
       </div>
