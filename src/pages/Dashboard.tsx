@@ -22,39 +22,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import ActionItems from "@/components/process/ActionItems";
 import { useToast } from "@/components/ui/use-toast";
+import { Interval } from "@/utils/dateCalculations";
 
 const Dashboard = () => {
   const { toast } = useToast();
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   const mockProcesses = [
-  {
-    id: 1,
-    title: "Weekly Team Meeting Minutes",
-    owner: "John Doe",
-    interval: "weekly",
-    status: "done",
-    lastUpdated: "2024-03-01",
-    startDate: new Date("2024-03-01"),
-  },
-  {
-    id: 2,
-    title: "Monthly Financial Report",
-    owner: "Jane Smith",
-    interval: "monthly",
-    status: "blocked",
-    lastUpdated: "2024-02-28",
-    startDate: new Date("2024-02-01"),
-  },
-  {
-    id: 3,
-    title: "Quarterly Strategy Review",
-    owner: "Mike Johnson",
-    interval: "quarterly",
-    status: "incomplete",
-    lastUpdated: "2024-02-15",
-    startDate: new Date("2024-01-01"),
-  },
+    {
+      id: 1,
+      title: "Weekly Team Meeting Minutes",
+      owner: "John Doe",
+      interval: "weekly" as Interval,
+      status: "done",
+      lastUpdated: "2024-03-01",
+      startDate: new Date("2024-03-01"),
+    },
+    {
+      id: 2,
+      title: "Monthly Financial Report",
+      owner: "Jane Smith",
+      interval: "monthly" as Interval,
+      status: "blocked",
+      lastUpdated: "2024-02-28",
+      startDate: new Date("2024-02-01"),
+    },
+    {
+      id: 3,
+      title: "Quarterly Strategy Review",
+      owner: "Mike Johnson",
+      interval: "quarterly" as Interval,
+      status: "incomplete",
+      lastUpdated: "2024-02-15",
+      startDate: new Date("2024-01-01"),
+    },
   ];
 
   const getStatusColor = (status: string) => {
