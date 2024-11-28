@@ -16,13 +16,13 @@ const NavBar = () => {
           <Button variant="ghost" asChild>
             <Link to="/manage">
               <FolderPlus className="h-4 w-4 mr-2" />
-              Manage Processes
+              Manage Outcomes
             </Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link to="/my-processes">
+            <Link to="/my-outcomes">
               <ListTodo className="h-4 w-4 mr-2" />
-              My Processes
+              My Outcomes
             </Link>
           </Button>
           <Button variant="ghost" asChild>
