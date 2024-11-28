@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import ManageProcesses from "./pages/ManageProcesses";
 import MyProcesses from "./pages/MyProcesses";
 import Dashboard from "./pages/Dashboard";
+import Tasks from "./pages/Tasks";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/manage" element={<ManageProcesses />} />
               <Route path="/my-processes" element={<MyProcesses />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/tasks" element={<Tasks />} />
             </Routes>
           </div>
         </div>
