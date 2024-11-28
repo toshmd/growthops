@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import ProcessStatistics from "@/components/process/ProcessStatistics";
-import { Card } from "@/components/ui/card";
 import { AlertCircle, Clock, Activity, PieChart, CalendarDays } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import ProcessStatistics from "@/components/process/ProcessStatistics";
 import { Process } from "@/types/process";
 import { format, isWithinInterval, startOfWeek, endOfWeek } from "date-fns";
 import { PieChart as ReChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
@@ -218,7 +218,7 @@ const Index = () => {
         </div>
 
         {/* Action Center */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Recent Activity Feed */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -260,19 +260,6 @@ const Index = () => {
               ))}
             </div>
           </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="space-x-4">
-          <Button asChild>
-            <Link to="/manage">Manage Processes</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/my-processes">My Processes</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link to="/dashboard">Leadership Dashboard</Link>
-          </Button>
         </div>
       </div>
     </div>
