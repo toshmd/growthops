@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import ActionItems from "./ActionItems";
 
 interface ReportingDateCardProps {
   date: Date;
@@ -23,6 +24,7 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
   const [isEditing, setIsEditing] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(status?.status || "pending");
   const [notes, setNotes] = useState(status?.notes || "");
+  const [actionItems, setActionItems] = useState(status?.actionItems || []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -83,6 +85,14 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
                   className="h-20"
                 />
               </div>
+
+              <div>
+                <label className="text-sm font-medium mb-1 block">Action Items</label>
+                <ActionItems
+                  items={actionItems}
+                  onUpdate={setActionItems}
+                />
+              </div>
               
               <Button onClick={handleUpdate} className="w-full">
                 Save Changes
@@ -102,6 +112,28 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
                   </Badge>
                 </p>
                 {status.notes && <p className="mt-1">Notes: {status.notes}</p>}
+                {status.actionItems && status.actionItems.length > 0 && (
+                  <div className="mt-2">
+                    <p className="font-medium mb-1">Action Items:</p>
+                    <ul className="space-y-1">
+                      {status.actionItems.map((item) => (
+                        <li key={item.id} className="flex items-center gap-2">
+                          <Checkbox
+                            checked={item.completed}
+                            disabled
+                            id={`view-${item.id}`}
+                          />
+                          <label
+                            htmlFor={`view-${item.id}`}
+                            className={item.completed ? "line-through text-gray-500" : ""}
+                          >
+                            {item.text}
+                          </label>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <p className="mt-1 text-xs">
                   Updated by {status.updatedBy} on{" "}
                   {format(status.updatedAt || new Date(), "PPp")}
