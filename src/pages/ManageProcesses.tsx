@@ -8,6 +8,12 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
 import CreateProcess from "./CreateProcess";
 
@@ -104,22 +110,14 @@ const ManageProcesses = () => {
         ))}
       </Accordion>
 
-      {showCreateProcess && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm">
-          <div className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg">
-            <h2 className="text-lg font-semibold">
-              Create Process in {selectedCategory}
-            </h2>
-            <CreateProcess />
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateProcess(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
+      <Dialog open={showCreateProcess} onOpenChange={setShowCreateProcess}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create Process in {selectedCategory}</DialogTitle>
+          </DialogHeader>
+          <CreateProcess />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

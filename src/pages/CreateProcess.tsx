@@ -68,110 +68,105 @@ const CreateProcess = () => {
   const existingCategories = ["HR", "Finance", "Operations", "IT", "Marketing"];
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container max-w-2xl">
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <h1 className="text-2xl font-bold mb-6">Create New Process</h1>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Process Title</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter process title" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+    <div className="py-4">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Process Title</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter process title" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Description</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Enter process description"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Enter process description"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="interval"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Interval</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select interval" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {intervals.map((interval) => (
-                          <SelectItem key={interval} value={interval}>
-                            {interval.charAt(0).toUpperCase() + interval.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="interval"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Interval</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select interval" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {intervals.map((interval) => (
+                      <SelectItem key={interval} value={interval}>
+                        {interval.charAt(0).toUpperCase() + interval.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="owner"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Process Owner</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter owner name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="owner"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Process Owner</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter owner name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="categories"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categories</FormLabel>
-                    <FormControl>
-                      <Categories
-                        selectedCategories={field.value}
-                        onCategoriesChange={field.onChange}
-                        existingCategories={existingCategories}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="categories"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categories</FormLabel>
+                <FormControl>
+                  <Categories
+                    selectedCategories={field.value}
+                    onCategoriesChange={field.onChange}
+                    existingCategories={existingCategories}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <Button type="submit" className="w-full">
-                Create Process
-              </Button>
-            </form>
-          </Form>
-        </div>
-      </div>
+          <Button type="submit" className="w-full">
+            Create Process
+          </Button>
+        </form>
+      </Form>
     </div>
   );
 };
