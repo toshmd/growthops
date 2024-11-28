@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { Process } from "@/types/process";
 import ProcessCard from "@/components/process/ProcessCard";
+import ProcessStatistics from "@/components/process/ProcessStatistics";
 
 // Mock data - in a real app this would come from an API
 const mockProcesses: Process[] = [
@@ -80,6 +81,7 @@ const MyProcesses = () => {
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container max-w-4xl mx-auto px-4">
         <h1 className="text-2xl font-bold mb-8">My Processes</h1>
+        <ProcessStatistics processes={processes} />
         <div className="space-y-6">
           {processes.map((process) => (
             <ProcessCard

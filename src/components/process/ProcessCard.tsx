@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Process } from "@/types/process";
 import ProcessReportingDates from "./ProcessReportingDates";
 import { Clock, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ProcessCardProps {
   process: Process;
@@ -11,6 +13,8 @@ interface ProcessCardProps {
 }
 
 const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: ProcessCardProps) => {
+  const { toast } = useToast();
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "done":
@@ -33,6 +37,14 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
     }
   };
 
+  const handleQuickStatusUpdate = (newStatus: string) => {
+    onUpdateStatus(process.id, newStatus, "Status updated via quick action");
+    toast({
+      title: "Status Updated",
+      description: `Process status changed to ${newStatus}`,
+    });
+  };
+
   return (
     <Card className={`p-6 mb-6 transition-all hover:shadow-md ${getStatusColor(process.status)}`}>
       <div className="flex justify-between items-start mb-4">
@@ -43,13 +55,33 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
             <p className="text-gray-600 mt-1">{process.description}</p>
           </div>
         </div>
-        <Badge 
-          variant={process.status === "done" ? "default" : "secondary"}
-          className="flex items-center gap-1"
-        >
-          <Calendar className="h-4 w-4" />
-          {process.interval}
-        </Badge>
+        <div className="flex flex-col items-end gap-2">
+          <Badge 
+            variant={process.status === "done" ? "default" : "secondary"}
+            className="flex items-center gap-1"
+          >
+            <Calendar className="h-4 w-4" />
+            {process.interval}
+          </Badge>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickStatusUpdate("incomplete")}
+              className="text-warning hover:text-warning"
+            >
+              Mark Incomplete
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleQuickStatusUpdate("done")}
+              className="text-success hover:text-success"
+            >
+              Mark Complete
+            </Button>
+          </div>
+        </div>
       </div>
 
       <ProcessReportingDates 
