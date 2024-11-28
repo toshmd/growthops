@@ -29,6 +29,7 @@ import {
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface UserTableProps {
   users: User[];
@@ -64,6 +65,7 @@ const UserTable = ({ users, onEdit }: UserTableProps) => {
             <TableHead>User</TableHead>
             <TableHead className="hidden md:table-cell">Title</TableHead>
             <TableHead className="hidden md:table-cell">Email</TableHead>
+            <TableHead className="hidden md:table-cell">Team</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[100px]">Actions</TableHead>
           </TableRow>
@@ -85,6 +87,14 @@ const UserTable = ({ users, onEdit }: UserTableProps) => {
               </TableCell>
               <TableCell className="hidden md:table-cell">{user.title}</TableCell>
               <TableCell className="hidden md:table-cell">{user.email}</TableCell>
+              <TableCell className="hidden md:table-cell">
+                {user.teamId && (
+                  <Badge variant="secondary">
+                    {/* Replace with actual team name lookup */}
+                    {user.teamId === "1" ? "Engineering" : "Marketing"}
+                  </Badge>
+                )}
+              </TableCell>
               <TableCell>
                 <Switch
                   checked={user.status === "active"}

@@ -24,5 +24,6 @@ export type Outcome = {
   nextDue: string;
   status: string;
   startDate: Date;
+  teamId?: string;
   reportingDates?: ReportingDateStatus[];
 };

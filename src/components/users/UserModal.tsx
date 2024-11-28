@@ -16,10 +16,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { User } from "@/types/user";
+import { Team } from "@/types/team";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
@@ -27,15 +35,17 @@ const formSchema = z.object({
   title: z.string().min(2, "Title must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   photo: z.string().url("Invalid photo URL").optional(),
+  teamId: z.string().optional(),
 });
 
 interface UserModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
+  teams: Team[];
 }
 
-const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
+const UserModal = ({ isOpen, onClose, user, teams }: UserModalProps) => {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,6 +55,7 @@ const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
       title: "",
       email: "",
       photo: "",
+      teamId: "",
     },
   });
 
@@ -58,12 +69,12 @@ const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
         title: "",
         email: "",
         photo: "",
+        teamId: "",
       });
     }
   }, [user, form]);
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    // Mock API call - replace with actual API call
     try {
       if (user) {
         toast({
@@ -155,6 +166,30 @@ const UserModal = ({ isOpen, onClose, user }: UserModalProps) => {
                   <FormControl>
                     <Input placeholder="https://example.com/photo.jpg" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="teamId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Team</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a team" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {teams.map((team) => (
+                        <SelectItem key={team.id} value={team.id}>
+                          {team.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

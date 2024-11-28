@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Outcome } from "@/types/outcome";
 import OutcomeReportingDates from "./OutcomeReportingDates";
-import { Clock, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, Calendar, Users } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { isPast } from "date-fns";
 
@@ -10,9 +10,10 @@ interface OutcomeCardProps {
   outcome: Outcome;
   onUpdateStatus: (outcomeId: number, status: string, notes: string) => void;
   onUpdateReportingDate: (outcomeId: number, date: Date) => void;
+  teamName?: string;
 }
 
-const OutcomeCard = ({ outcome, onUpdateStatus, onUpdateReportingDate }: OutcomeCardProps) => {
+const OutcomeCard = ({ outcome, onUpdateStatus, onUpdateReportingDate, teamName }: OutcomeCardProps) => {
   const { toast } = useToast();
 
   const getStatusIcon = (status: string) => {
@@ -61,6 +62,12 @@ const OutcomeCard = ({ outcome, onUpdateStatus, onUpdateReportingDate }: Outcome
           <div>
             <h2 className="text-xl font-semibold">{outcome.title}</h2>
             <p className="text-gray-600 mt-1">{outcome.description}</p>
+            {teamName && (
+              <div className="flex items-center gap-2 mt-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <Badge variant="secondary">{teamName}</Badge>
+              </div>
+            )}
           </div>
         </div>
         <Badge 

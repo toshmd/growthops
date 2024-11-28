@@ -4,6 +4,7 @@ import { PlusCircle } from "lucide-react";
 import UserTable from "@/components/users/UserTable";
 import UserModal from "@/components/users/UserModal";
 import { User } from "@/types/user";
+import { Team } from "@/types/team";
 
 const Users = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,6 +20,7 @@ const Users = () => {
       email: "john@example.com",
       photo: "https://api.dicebear.com/7.x/avatars/svg?seed=John",
       status: "active",
+      teamId: "1",
     },
     {
       id: "2",
@@ -28,6 +30,25 @@ const Users = () => {
       email: "jane@example.com",
       photo: "https://api.dicebear.com/7.x/avatars/svg?seed=Jane",
       status: "active",
+      teamId: "2",
+    },
+  ];
+
+  // Mock teams data - replace with actual API call
+  const teams: Team[] = [
+    {
+      id: "1",
+      name: "Engineering",
+      description: "Software development team",
+      createdAt: new Date(),
+      members: 5,
+    },
+    {
+      id: "2",
+      name: "Marketing",
+      description: "Marketing and communications team",
+      createdAt: new Date(),
+      members: 3,
     },
   ];
 
@@ -57,6 +78,7 @@ const Users = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         user={selectedUser}
+        teams={teams}
       />
     </div>
   );

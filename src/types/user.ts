@@ -6,4 +6,5 @@ export interface User {
   email: string;
   photo: string;
   status: "active" | "inactive";
+  teamId?: string;
 }
