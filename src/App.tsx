@@ -10,6 +10,7 @@ import MyOutcomes from "./pages/MyOutcomes";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Users from "./pages/Users";
+import Teams from "./pages/Teams";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/users" element={<Users />} />
+              <Route path="/teams" element={<Teams />} />
             </Routes>
           </div>
         </div>
