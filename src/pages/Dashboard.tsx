@@ -7,9 +7,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
+import { Clock, CheckCircle2, AlertCircle, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { format, isPast } from "date-fns";
 import { calculateFutureReportingDates } from "@/utils/dateCalculations";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { useState } from "react";
 
 // Mock data - in a real app this would come from a backend
 const mockProcesses = [
@@ -69,6 +76,13 @@ const Dashboard = () => {
     }
   };
 
+  const getDateStatusColor = (date: Date, processStatus: string) => {
+    if (isPast(date)) {
+      return processStatus === "done" ? "bg-success/10" : "bg-destructive/10";
+    }
+    return "bg-gray-50";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container">
@@ -122,38 +136,46 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Timeline Section */}
-                <div className="relative mt-4 pl-4">
-                  <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200" />
-                  <div className="space-y-3">
-                    {calculateFutureReportingDates(process.startDate, process.interval as any)
-                      .slice(0, 3)
-                      .map((date, index) => (
-                        <div key={index} className="flex items-center gap-3">
-                          <div
-                            className={`w-2.5 h-2.5 rounded-full ${
-                              isPast(date)
-                                ? process.status === "done"
-                                  ? "bg-success"
-                                  : "bg-destructive"
-                                : "bg-gray-300"
-                            }`}
-                          />
-                          <span className="text-sm text-gray-600">
-                            {format(date, "PPP")}
-                            {isPast(date) && (
-                              <Badge
-                                variant={process.status === "done" ? "default" : "destructive"}
-                                className="ml-2 text-xs"
-                              >
-                                {process.status === "done" ? "Completed" : "Overdue"}
-                              </Badge>
-                            )}
-                          </span>
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="dates" className="border-none">
+                    <AccordionTrigger className="py-2 hover:no-underline">
+                      <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                        View All Dates
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200" />
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="relative pl-4 mt-4">
+                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200" />
+                        <div className="space-y-4">
+                          {calculateFutureReportingDates(process.startDate, process.interval as any)
+                            .map((date, index) => (
+                              <div key={index} className="relative">
+                                <div
+                                  className={`absolute left-0 w-2.5 h-2.5 rounded-full -translate-x-[5px] ${
+                                    process.status === "done" ? "bg-success" :
+                                    isPast(date) ? "bg-destructive" : "bg-gray-300"
+                                  }`}
+                                />
+                                <div className={`ml-4 p-3 rounded-lg ${getDateStatusColor(date, process.status)}`}>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">
+                                      {format(date, "PPP")}
+                                    </span>
+                                    {isPast(date) && process.status !== "done" && (
+                                      <Badge variant="destructive" size="sm">
+                                        Overdue
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                         </div>
-                      ))}
-                  </div>
-                </div>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </div>
             </Card>
           ))}
