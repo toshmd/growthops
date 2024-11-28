@@ -10,7 +10,7 @@ const Index = () => {
           <p className="text-lg text-gray-600 mb-8">Track and manage recurring business processes efficiently</p>
           <div className="space-x-4">
             <Button asChild>
-              <Link to="/create">Create Process</Link>
+              <Link to="/manage">Manage Processes</Link>
             </Button>
             <Button asChild variant="outline">
               <Link to="/my-processes">My Processes</Link>
