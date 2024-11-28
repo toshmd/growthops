@@ -1,4 +1,4 @@
-import { Interval } from "@/utils/dateCalculations";
+export type Interval = "daily" | "weekly" | "biweekly" | "monthly" | "quarterly" | "biannual" | "annual";
 
 export type ActionItem = {
   id: string;
@@ -16,7 +16,7 @@ export type ReportingDateStatus = {
   actionItems: ActionItem[];
 };
 
-export type Process = {
+export type Outcome = {
   id: number;
   title: string;
   description: string;

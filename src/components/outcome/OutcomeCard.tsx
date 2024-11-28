@@ -1,18 +1,18 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Process } from "@/types/process";
-import ProcessReportingDates from "./ProcessReportingDates";
+import { Outcome } from "@/types/outcome";
+import OutcomeReportingDates from "./OutcomeReportingDates";
 import { Clock, CheckCircle2, AlertCircle, Calendar } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { isPast } from "date-fns";
 
-interface ProcessCardProps {
-  process: Process;
-  onUpdateStatus: (processId: number, status: string, notes: string) => void;
-  onUpdateReportingDate: (processId: number, date: Date) => void;
+interface OutcomeCardProps {
+  outcome: Outcome;
+  onUpdateStatus: (outcomeId: number, status: string, notes: string) => void;
+  onUpdateReportingDate: (outcomeId: number, date: Date) => void;
 }
 
-const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: ProcessCardProps) => {
+const OutcomeCard = ({ outcome, onUpdateStatus, onUpdateReportingDate }: OutcomeCardProps) => {
   const { toast } = useToast();
 
   const getStatusIcon = (status: string) => {
@@ -26,16 +26,16 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
     }
   };
 
-  const calculateProcessStatus = () => {
-    if (!process.reportingDates || process.reportingDates.length === 0) return "incomplete";
+  const calculateOutcomeStatus = () => {
+    if (!outcome.reportingDates || outcome.reportingDates.length === 0) return "incomplete";
     
-    const hasOverdue = process.reportingDates.some(date => 
+    const hasOverdue = outcome.reportingDates.some(date => 
       isPast(date.date) && date.status !== "completed"
     );
     
     if (hasOverdue) return "incomplete";
     
-    const allCompleted = process.reportingDates.every(date => 
+    const allCompleted = outcome.reportingDates.every(date => 
       !isPast(date.date) || date.status === "completed"
     );
     
@@ -54,30 +54,30 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
   };
 
   return (
-    <Card className={`p-6 mb-6 transition-all hover:shadow-md ${getStatusColor(calculateProcessStatus())}`}>
+    <Card className={`p-6 mb-6 transition-all hover:shadow-md ${getStatusColor(calculateOutcomeStatus())}`}>
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-start gap-3">
-          {getStatusIcon(calculateProcessStatus())}
+          {getStatusIcon(calculateOutcomeStatus())}
           <div>
-            <h2 className="text-xl font-semibold">{process.title}</h2>
-            <p className="text-gray-600 mt-1">{process.description}</p>
+            <h2 className="text-xl font-semibold">{outcome.title}</h2>
+            <p className="text-gray-600 mt-1">{outcome.description}</p>
           </div>
         </div>
         <Badge 
-          variant={calculateProcessStatus() === "done" ? "default" : "secondary"}
+          variant={calculateOutcomeStatus() === "done" ? "default" : "secondary"}
           className="flex items-center gap-1"
         >
           <Calendar className="h-4 w-4" />
-          {process.interval}
+          {outcome.interval}
         </Badge>
       </div>
 
-      <ProcessReportingDates 
-        process={process}
+      <OutcomeReportingDates 
+        outcome={outcome}
         onUpdateReportingDate={onUpdateReportingDate}
       />
     </Card>
   );
 };
 
-export default ProcessCard;
+export default OutcomeCard;

@@ -1,21 +1,21 @@
-import { Process } from "@/types/process";
+import { Outcome } from "@/types/outcome";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2, AlertCircle, Clock, CalendarDays } from "lucide-react";
 
-interface ProcessStatisticsProps {
-  processes: Process[];
+interface OutcomeStatisticsProps {
+  outcomes: Outcome[];
 }
 
-const ProcessStatistics = ({ processes }: ProcessStatisticsProps) => {
+const OutcomeStatistics = ({ outcomes }: OutcomeStatisticsProps) => {
   const stats = {
-    total: processes.length,
-    completed: processes.filter(p => p.status === "done").length,
-    overdue: processes.filter(p => {
-      const nextDueDate = new Date(p.nextDue);
-      return nextDueDate < new Date() && p.status !== "done";
+    total: outcomes.length,
+    completed: outcomes.filter(o => o.status === "done").length,
+    overdue: outcomes.filter(o => {
+      const nextDueDate = new Date(o.nextDue);
+      return nextDueDate < new Date() && o.status !== "done";
     }).length,
-    upcoming: processes.filter(p => {
-      const nextDueDate = new Date(p.nextDue);
+    upcoming: outcomes.filter(o => {
+      const nextDueDate = new Date(o.nextDue);
       const today = new Date();
       const inSevenDays = new Date();
       inSevenDays.setDate(today.getDate() + 7);
@@ -30,7 +30,7 @@ const ProcessStatistics = ({ processes }: ProcessStatisticsProps) => {
           <CalendarDays className="h-6 w-6 text-blue-500" />
         </div>
         <div>
-          <p className="text-sm text-gray-500">Total Processes</p>
+          <p className="text-sm text-gray-500">Total Outcomes</p>
           <p className="text-2xl font-semibold">{stats.total}</p>
         </div>
       </Card>
@@ -68,4 +68,4 @@ const ProcessStatistics = ({ processes }: ProcessStatisticsProps) => {
   );
 };
 
-export default ProcessStatistics;
+export default OutcomeStatistics;

@@ -15,10 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
-import CreateProcess from "./CreateProcess";
+import CreateOutcome from "./CreateOutcome";
 
 // Mock data - in a real app, this would come from an API
-const mockProcesses = {
+const mockOutcomes = {
   "HR": [
     { id: 1, title: "Employee Onboarding", interval: "weekly" },
     { id: 2, title: "Performance Review", interval: "quarterly" },
@@ -29,15 +29,14 @@ const mockProcesses = {
   ],
 };
 
-const ManageProcesses = () => {
+const ManageOutcomes = () => {
   const { toast } = useToast();
   const [newCategory, setNewCategory] = useState("");
-  const [showCreateProcess, setShowCreateProcess] = useState(false);
+  const [showCreateOutcome, setShowCreateOutcome] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("");
 
   const handleAddCategory = () => {
     if (newCategory.trim()) {
-      // In a real app, this would make an API call
       toast({
         title: "Category Added",
         description: `Category "${newCategory}" has been created.`,
@@ -46,16 +45,15 @@ const ManageProcesses = () => {
     }
   };
 
-  const handleCreateProcess = (category: string) => {
+  const handleCreateOutcome = (category: string) => {
     setSelectedCategory(category);
-    setShowCreateProcess(true);
+    setShowCreateOutcome(true);
   };
 
   return (
     <div className="container py-8">
-      <h1 className="text-2xl font-bold mb-6">Manage Processes</h1>
+      <h1 className="text-2xl font-bold mb-6">Manage Outcomes</h1>
       
-      {/* Add new category section */}
       <div className="mb-8 flex gap-4 items-center">
         <Input
           placeholder="Enter new category name"
@@ -66,9 +64,8 @@ const ManageProcesses = () => {
         <Button onClick={handleAddCategory}>Add Category</Button>
       </div>
 
-      {/* Categories and processes accordion */}
       <Accordion type="single" collapsible className="w-full">
-        {Object.entries(mockProcesses).map(([category, processes]) => (
+        {Object.entries(mockOutcomes).map(([category, outcomes]) => (
           <AccordionItem key={category} value={category}>
             <AccordionTrigger className="text-lg">
               <div className="flex justify-between items-center w-full pr-4">
@@ -78,25 +75,25 @@ const ManageProcesses = () => {
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCreateProcess(category);
+                    handleCreateOutcome(category);
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Process
+                  Add Outcome
                 </Button>
               </div>
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4 p-4">
-                {processes.map((process) => (
+                {outcomes.map((outcome) => (
                   <div
-                    key={process.id}
+                    key={outcome.id}
                     className="flex justify-between items-center p-4 rounded-lg border bg-card"
                   >
                     <div>
-                      <h3 className="font-medium">{process.title}</h3>
+                      <h3 className="font-medium">{outcome.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Interval: {process.interval}
+                        Interval: {outcome.interval}
                       </p>
                     </div>
                     <Button variant="outline" size="sm">
@@ -110,16 +107,16 @@ const ManageProcesses = () => {
         ))}
       </Accordion>
 
-      <Dialog open={showCreateProcess} onOpenChange={setShowCreateProcess}>
+      <Dialog open={showCreateOutcome} onOpenChange={setShowCreateOutcome}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create Process in {selectedCategory}</DialogTitle>
+            <DialogTitle>Create Outcome in {selectedCategory}</DialogTitle>
           </DialogHeader>
-          <CreateProcess />
+          <CreateOutcome />
         </DialogContent>
       </Dialog>
     </div>
   );
 };
 
-export default ManageProcesses;
+export default ManageOutcomes;

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Process } from "@/types/process";
-import ProcessCard from "@/components/process/ProcessCard";
-import ProcessStatistics from "@/components/process/ProcessStatistics";
+import { Outcome } from "@/types/outcome";
+import OutcomeCard from "@/components/outcome/OutcomeCard";
+import OutcomeStatistics from "@/components/outcome/OutcomeStatistics";
 
 // Mock data - in a real app this would come from an API
-const mockProcesses: Process[] = [
+const mockOutcomes: Outcome[] = [
   {
     id: 1,
     title: "Weekly Team Meeting Minutes",
@@ -28,16 +28,16 @@ const mockProcesses: Process[] = [
   },
 ];
 
-const MyProcesses = () => {
-  const [processes, setProcesses] = useState(mockProcesses);
+const MyOutcomes = () => {
+  const [outcomes, setOutcomes] = useState(mockOutcomes);
   const { toast } = useToast();
 
-  const handleUpdateReportingDate = (processId: number, date: Date) => {
-    setProcesses((currentProcesses) =>
-      currentProcesses.map((process) => {
-        if (process.id === processId) {
+  const handleUpdateReportingDate = (outcomeId: number, date: Date) => {
+    setOutcomes((currentOutcomes) =>
+      currentOutcomes.map((outcome) => {
+        if (outcome.id === outcomeId) {
           const updatedReportingDates = [
-            ...(process.reportingDates || []),
+            ...(outcome.reportingDates || []),
             {
               date,
               status: "pending" as const,
@@ -48,11 +48,11 @@ const MyProcesses = () => {
             },
           ];
           return {
-            ...process,
+            ...outcome,
             reportingDates: updatedReportingDates,
           };
         }
-        return process;
+        return outcome;
       })
     );
 
@@ -62,31 +62,31 @@ const MyProcesses = () => {
     });
   };
 
-  const handleUpdateStatus = (processId: number, status: string, notes: string) => {
-    setProcesses((currentProcesses) =>
-      currentProcesses.map((process) =>
-        process.id === processId
-          ? { ...process, status, notes }
-          : process
+  const handleUpdateStatus = (outcomeId: number, status: string, notes: string) => {
+    setOutcomes((currentOutcomes) =>
+      currentOutcomes.map((outcome) =>
+        outcome.id === outcomeId
+          ? { ...outcome, status, notes }
+          : outcome
       )
     );
 
     toast({
-      title: "Process Updated",
-      description: "The process status has been updated successfully.",
+      title: "Outcome Updated",
+      description: "The outcome status has been updated successfully.",
     });
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container max-w-4xl mx-auto px-4">
-        <h1 className="text-2xl font-bold mb-8">My Processes</h1>
-        <ProcessStatistics processes={processes} />
+        <h1 className="text-2xl font-bold mb-8">My Outcomes</h1>
+        <OutcomeStatistics outcomes={outcomes} />
         <div className="space-y-6">
-          {processes.map((process) => (
-            <ProcessCard
-              key={process.id}
-              process={process}
+          {outcomes.map((outcome) => (
+            <OutcomeCard
+              key={outcome.id}
+              outcome={outcome}
               onUpdateStatus={handleUpdateStatus}
               onUpdateReportingDate={handleUpdateReportingDate}
             />
@@ -97,4 +97,4 @@ const MyProcesses = () => {
   );
 };
 
-export default MyProcesses;
+export default MyOutcomes;
