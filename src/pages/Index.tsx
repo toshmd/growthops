@@ -1,19 +1,18 @@
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { AlertCircle, Clock, Activity, PieChart, CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import ProcessStatistics from "@/components/process/ProcessStatistics";
-import { Process } from "@/types/process";
+import OutcomeStatistics from "@/components/outcome/OutcomeStatistics";
+import { Outcome } from "@/types/outcome";
 import { format, isWithinInterval, startOfWeek, endOfWeek } from "date-fns";
 import { PieChart as ReChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
 
 const mockUser = {
   firstName: "John",
   lastName: "Doe",
-  title: "Process Manager"
+  title: "Outcome Manager"
 };
 
-const mockProcesses: Process[] = [
+const mockOutcomes: Outcome[] = [
   { 
     id: 1, 
     title: "Monthly Report", 
@@ -46,48 +45,45 @@ const mockProcesses: Process[] = [
 const recentActivity = [
   {
     id: 1,
-    action: "Process completed",
-    process: "Weekly Review",
+    action: "Outcome completed",
+    outcome: "Weekly Review",
     user: "John Doe",
     timestamp: new Date(2024, 2, 10, 14, 30)
   },
   {
     id: 2,
     action: "New task added",
-    process: "Monthly Report",
+    outcome: "Monthly Report",
     user: "Jane Smith",
     timestamp: new Date(2024, 2, 9, 11, 15)
   },
   {
     id: 3,
     action: "Status updated",
-    process: "Daily Standup",
+    outcome: "Daily Standup",
     user: "Mike Johnson",
     timestamp: new Date(2024, 2, 8, 9, 45)
   }
 ];
 
 const Index = () => {
-  // Sort processes by next due date
-  const upcomingDeadlines = [...mockProcesses]
+  const upcomingDeadlines = [...mockOutcomes]
     .sort((a, b) => new Date(a.nextDue).getTime() - new Date(b.nextDue).getTime())
     .slice(0, 3);
 
-  // Calculate processes due this week
   const today = new Date();
   const weekStart = startOfWeek(today);
   const weekEnd = endOfWeek(today);
   
-  const dueThisWeek = mockProcesses.filter(process => {
-    const dueDate = new Date(process.nextDue);
+  const dueThisWeek = mockOutcomes.filter(outcome => {
+    const dueDate = new Date(outcome.nextDue);
     return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
   });
 
-  // Calculate completion rates for pie chart
   const completionData = [
-    { name: 'Completed', value: mockProcesses.filter(p => p.status === 'done').length },
-    { name: 'In Progress', value: mockProcesses.filter(p => p.status === 'incomplete').length },
-    { name: 'Overdue', value: mockProcesses.filter(p => {
+    { name: 'Completed', value: mockOutcomes.filter(p => p.status === 'done').length },
+    { name: 'In Progress', value: mockOutcomes.filter(p => p.status === 'incomplete').length },
+    { name: 'Overdue', value: mockOutcomes.filter(p => {
       const dueDate = new Date(p.nextDue);
       return dueDate < today && p.status !== 'done';
     }).length },
@@ -98,7 +94,6 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900">
             Welcome back, {mockUser.firstName}!
@@ -108,14 +103,11 @@ const Index = () => {
           </p>
         </div>
 
-        {/* Process Statistics */}
-        <ProcessStatistics processes={mockProcesses} />
+        <OutcomeStatistics outcomes={mockOutcomes} />
 
-        {/* Process Summary Section */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Process Summary</h2>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Outcome Summary</h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Completion Rates */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <PieChart className="h-5 w-5 text-blue-500" />
@@ -143,22 +135,21 @@ const Index = () => {
               </div>
             </Card>
 
-            {/* Processes Due This Week */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <CalendarDays className="h-5 w-5 text-blue-500" />
                 <h3 className="text-lg font-semibold">Due This Week</h3>
               </div>
               <div className="space-y-3">
-                {dueThisWeek.map((process) => (
-                  <div key={process.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
+                {dueThisWeek.map((outcome) => (
+                  <div key={outcome.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
                     <div>
-                      <p className="font-medium text-gray-900">{process.title}</p>
+                      <p className="font-medium text-gray-900">{outcome.title}</p>
                       <p className="text-xs text-gray-500">
-                        Due: {format(new Date(process.nextDue), "MMM d")}
+                        Due: {format(new Date(outcome.nextDue), "MMM d")}
                       </p>
                     </div>
-                    {process.status === 'done' ? (
+                    {outcome.status === 'done' ? (
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                         Complete
                       </span>
@@ -172,7 +163,6 @@ const Index = () => {
               </div>
             </Card>
 
-            {/* Quick Status Overview */}
             <Card className="p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="h-5 w-5 text-blue-500" />
@@ -180,8 +170,8 @@ const Index = () => {
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Total Processes</span>
-                  <span className="font-semibold">{mockProcesses.length}</span>
+                  <span className="text-gray-600">Total Outcomes</span>
+                  <span className="font-semibold">{mockOutcomes.length}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Completed</span>
@@ -206,20 +196,17 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Overdue Items Section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Requires Attention</h2>
           <Card className="p-4 bg-red-50 border-red-200">
             <div className="flex items-center space-x-2 text-red-600">
               <AlertCircle className="h-5 w-5" />
-              <span className="font-medium">2 overdue processes require your attention</span>
+              <span className="font-medium">2 overdue outcomes require your attention</span>
             </div>
           </Card>
         </div>
 
-        {/* Action Center */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Recent Activity Feed */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Activity className="h-5 w-5 text-blue-500" />
@@ -230,7 +217,7 @@ const Index = () => {
                 <div key={activity.id} className="flex items-start gap-3 border-b border-gray-100 pb-3">
                   <div className="flex-1">
                     <p className="font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-600">{activity.process} - {activity.user}</p>
+                    <p className="text-sm text-gray-600">{activity.outcome} - {activity.user}</p>
                     <p className="text-xs text-gray-500">
                       {format(activity.timestamp, "MMM d, yyyy 'at' h:mm a")}
                     </p>
@@ -240,20 +227,19 @@ const Index = () => {
             </div>
           </Card>
 
-          {/* Upcoming Deadlines */}
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="h-5 w-5 text-blue-500" />
               <h2 className="text-xl font-semibold">Upcoming Deadlines</h2>
             </div>
             <div className="space-y-4">
-              {upcomingDeadlines.map((process) => (
-                <div key={process.id} className="flex items-start gap-3 border-b border-gray-100 pb-3">
+              {upcomingDeadlines.map((outcome) => (
+                <div key={outcome.id} className="flex items-start gap-3 border-b border-gray-100 pb-3">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{process.title}</p>
-                    <p className="text-sm text-gray-600">{process.description}</p>
+                    <p className="font-medium text-gray-900">{outcome.title}</p>
+                    <p className="text-sm text-gray-600">{outcome.description}</p>
                     <p className="text-xs text-gray-500">
-                      Due: {format(new Date(process.nextDue), "MMM d, yyyy")}
+                      Due: {format(new Date(outcome.nextDue), "MMM d, yyyy")}
                     </p>
                   </div>
                 </div>

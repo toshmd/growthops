@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import NavBar from "./components/NavBar";
 import Index from "./pages/Index";
-import ManageProcesses from "./pages/ManageProcesses";
-import MyProcesses from "./pages/MyProcesses";
+import ManageOutcomes from "./pages/ManageOutcomes";
+import MyOutcomes from "./pages/MyOutcomes";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Users from "./pages/Users";
@@ -24,8 +24,8 @@ const App = () => (
           <div className="flex-1">
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/manage" element={<ManageProcesses />} />
-              <Route path="/my-processes" element={<MyProcesses />} />
+              <Route path="/manage" element={<ManageOutcomes />} />
+              <Route path="/my-outcomes" element={<MyOutcomes />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/tasks" element={<Tasks />} />
               <Route path="/users" element={<Users />} />

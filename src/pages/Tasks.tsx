@@ -18,13 +18,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 
-// Mock data - in a real app, this would come from your processes
+// Mock data - in a real app, this would come from your outcomes
 const mockTasks = [
   {
     id: "1",
     text: "Review meeting notes",
-    processCategory: "HR",
-    processName: "Weekly Team Meeting Minutes",
+    outcomeCategory: "HR",
+    outcomeName: "Weekly Team Meeting Minutes",
     date: new Date("2024-03-10"),
     owner: "John Doe",
     completed: false,
@@ -32,8 +32,8 @@ const mockTasks = [
   {
     id: "2",
     text: "Update financial spreadsheet",
-    processCategory: "Finance",
-    processName: "Monthly Financial Report",
+    outcomeCategory: "Finance",
+    outcomeName: "Monthly Financial Report",
     date: new Date("2024-03-31"),
     owner: "Jane Smith",
     completed: true,
@@ -54,8 +54,8 @@ const Tasks = () => {
     .filter(
       (task) =>
         task.text.toLowerCase().includes(search.toLowerCase()) ||
-        task.processName.toLowerCase().includes(search.toLowerCase()) ||
-        task.processCategory.toLowerCase().includes(search.toLowerCase()) ||
+        task.outcomeName.toLowerCase().includes(search.toLowerCase()) ||
+        task.outcomeCategory.toLowerCase().includes(search.toLowerCase()) ||
         task.owner.toLowerCase().includes(search.toLowerCase())
     );
 
@@ -98,7 +98,7 @@ const Tasks = () => {
               <TableHead className="w-12">Status</TableHead>
               <TableHead>Task</TableHead>
               <TableHead>Category</TableHead>
-              <TableHead>Process</TableHead>
+              <TableHead>Outcome</TableHead>
               <TableHead>Due Date</TableHead>
               <TableHead>Owner</TableHead>
             </TableRow>
@@ -113,8 +113,8 @@ const Tasks = () => {
                   />
                 </TableCell>
                 <TableCell className="font-medium">{task.text}</TableCell>
-                <TableCell>{task.processCategory}</TableCell>
-                <TableCell>{task.processName}</TableCell>
+                <TableCell>{task.outcomeCategory}</TableCell>
+                <TableCell>{task.outcomeName}</TableCell>
                 <TableCell>{format(task.date, "MMM d, yyyy")}</TableCell>
                 <TableCell>{task.owner}</TableCell>
               </TableRow>
