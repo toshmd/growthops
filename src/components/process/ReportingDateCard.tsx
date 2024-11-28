@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { ReportingDateStatus } from "@/types/process";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,

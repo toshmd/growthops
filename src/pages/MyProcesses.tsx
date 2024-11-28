@@ -43,6 +43,7 @@ const MyProcesses = () => {
               notes: "",
               updatedBy: "Current User", // In a real app, this would come from auth
               updatedAt: new Date(),
+              actionItems: [], // Add empty actionItems array to fix the type error
             },
           ];
           return {
