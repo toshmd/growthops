@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -7,8 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Clock, CheckCircle2, AlertCircle, Calendar, ChevronDown, ChevronUp } from "lucide-react";
-import { format, isPast } from "date-fns";
+import { Clock, CheckCircle2, AlertCircle, Calendar, ChevronDown, ChevronUp, Edit2 } from "lucide-react";
+import { format, isPast, isWeekend } from "date-fns";
 import { calculateFutureReportingDates } from "@/utils/dateCalculations";
 import {
   Accordion,
@@ -16,10 +17,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import ActionItems from "@/components/process/ActionItems";
+import { useToast } from "@/components/ui/use-toast";
 
-// Mock data - in a real app this would come from a backend
-const mockProcesses = [
+const Dashboard = () => {
+  const { toast } = useToast();
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+
+  const mockProcesses = [
   {
     id: 1,
     title: "Weekly Team Meeting Minutes",
@@ -47,40 +55,112 @@ const mockProcesses = [
     lastUpdated: "2024-02-15",
     startDate: new Date("2024-01-01"),
   },
-];
+  ];
 
-const Dashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "done":
-        return "bg-success text-success-foreground";
+        return "bg-success/10 border-success";
       case "blocked":
-        return "bg-destructive text-destructive-foreground";
-      case "incomplete":
-        return "bg-warning text-warning-foreground";
+        return "bg-destructive/10 border-destructive";
       default:
-        return "bg-secondary text-secondary-foreground";
+        return "bg-gray-50 border-gray-200";
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "done":
-        return <CheckCircle2 className="h-4 w-4 text-success" />;
-      case "blocked":
-        return <AlertCircle className="h-4 w-4 text-destructive" />;
-      case "incomplete":
-        return <Clock className="h-4 w-4 text-warning" />;
-      default:
-        return null;
-    }
+  const handleUpdateNotes = (processId: number, date: Date, notes: string) => {
+    // In a real app, this would update the backend
+    toast({
+      title: "Notes Updated",
+      description: "The notes have been saved successfully.",
+    });
   };
 
-  const getDateStatusColor = (date: Date, processStatus: string) => {
-    if (isPast(date)) {
-      return processStatus === "done" ? "bg-success/10" : "bg-destructive/10";
-    }
-    return "bg-gray-50";
+  const handleUpdateActionItems = (processId: number, date: Date, items: any[]) => {
+    // In a real app, this would update the backend
+    toast({
+      title: "Action Items Updated",
+      description: "The action items have been saved successfully.",
+    });
+  };
+
+  const DateCard = ({ date, process, status }: { date: Date; process: any; status: string }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [notes, setNotes] = useState(status === "done" ? "Completed on time" : "");
+    const [actionItems, setActionItems] = useState<any[]>([]);
+
+    return (
+      <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
+        <div className={`p-4 rounded-lg border ${getStatusColor(status)}`}>
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              <div className="flex justify-between items-center mb-2">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{format(date, "PPP")}</p>
+                  {isPast(date) && status !== "done" && (
+                    <Badge 
+                      variant="destructive" 
+                      className="text-xs px-2 py-0.5"
+                    >
+                      Overdue
+                    </Badge>
+                  )}
+                </div>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    {isExpanded ? (
+                      <ChevronUp className="h-4 w-4" />
+                    ) : (
+                      <Edit2 className="h-4 w-4" />
+                    )}
+                  </Button>
+                </CollapsibleTrigger>
+              </div>
+
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                {status === "done" ? (
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                ) : isPast(date) ? (
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Clock className="h-4 w-4 text-warning" />
+                )}
+                <span>
+                  {status === "done" ? "Completed" : 
+                   status === "blocked" ? "Blocked" : "Pending"}
+                </span>
+              </div>
+
+              <CollapsibleContent>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Notes</label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Add notes..."
+                      className="h-20"
+                      onBlur={() => handleUpdateNotes(process.id, date, notes)}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Action Items</label>
+                    <ActionItems
+                      items={actionItems}
+                      onUpdate={(items) => {
+                        setActionItems(items);
+                        handleUpdateActionItems(process.id, date, items);
+                      }}
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </div>
+          </div>
+        </div>
+      </Collapsible>
+    );
   };
 
   return (
@@ -120,7 +200,11 @@ const Dashboard = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-2">
-                      {getStatusIcon(process.status)}
+                      {process.status === "done" ? (
+                        <CheckCircle2 className="h-5 w-5 text-success" />
+                      ) : (
+                        <Clock className="h-5 w-5 text-warning" />
+                      )}
                       <h2 className="text-lg font-semibold">{process.title}</h2>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">Owner: {process.owner}</p>
@@ -145,35 +229,22 @@ const Dashboard = () => {
                       </span>
                     </AccordionTrigger>
                     <AccordionContent>
-                      <div className="relative pl-4 mt-4">
-                        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200" />
-                        <div className="space-y-4">
-                          {calculateFutureReportingDates(process.startDate, process.interval as any)
-                            .map((date, index) => (
-                              <div key={index} className="relative">
-                                <div
-                                  className={`absolute left-0 w-2.5 h-2.5 rounded-full -translate-x-[5px] ${
-                                    process.status === "done" ? "bg-success" :
-                                    isPast(date) ? "bg-destructive" : "bg-gray-300"
-                                  }`}
-                                />
-                                <div className={`ml-4 p-3 rounded-lg ${getDateStatusColor(date, process.status)}`}>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-sm font-medium">
-                                      {format(date, "PPP")}
-                                    </span>
-                                    {isPast(date) && process.status !== "done" && (
-                                      <Badge 
-                                        variant="destructive" 
-                                        className="text-xs px-2 py-0.5"
-                                      >
-                                        Overdue
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
+                      <div className="relative mt-6">
+                        <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+                        <div className="space-y-6">
+                          {calculateFutureReportingDates(process.startDate, process.interval).map((date, index) => (
+                            <div key={index} className="relative pl-12">
+                              <div className={`absolute left-3 w-3 h-3 rounded-full -translate-x-1.5 ${
+                                process.status === "done" ? "bg-success" : 
+                                isPast(date) ? "bg-destructive" : "bg-gray-300"
+                              }`} />
+                              <DateCard
+                                date={date}
+                                process={process}
+                                status={process.status}
+                              />
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </AccordionContent>
