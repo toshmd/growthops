@@ -1,6 +1,6 @@
 import { format, isPast } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { ReportingDateStatus } from "@/types/process";
+import { ReportingDateStatus } from "@/types/outcome";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";

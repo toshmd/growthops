@@ -1,6 +1,6 @@
 import { format, isPast, isWeekend } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Process, ReportingDateStatus } from "@/types/process";
+import { Outcome, ReportingDateStatus } from "@/types/outcome";
 import { calculateFutureReportingDates } from "@/utils/dateCalculations";
 import {
   Accordion,
@@ -8,17 +8,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import ReportingDateCard from "./ReportingDateCard";
+import ReportingDateCard from "../process/ReportingDateCard";
 import { ChevronRight } from "lucide-react";
 
-interface ProcessReportingDatesProps {
-  process: Process;
-  onUpdateReportingDate: (processId: number, date: Date) => void;
+interface OutcomeReportingDatesProps {
+  outcome: Outcome;
+  onUpdateReportingDate: (outcomeId: number, date: Date) => void;
 }
 
-const ProcessReportingDates = ({ process, onUpdateReportingDate }: ProcessReportingDatesProps) => {
+const OutcomeReportingDates = ({ outcome, onUpdateReportingDate }: OutcomeReportingDatesProps) => {
   const getDateStatus = (date: Date) => {
-    return process.reportingDates?.find(
+    return outcome.reportingDates?.find(
       (rd) => rd.date.getTime() === date.getTime()
     );
   };
@@ -30,7 +30,7 @@ const ProcessReportingDates = ({ process, onUpdateReportingDate }: ProcessReport
     return "bg-white border-gray-200";
   };
 
-  const dates = calculateFutureReportingDates(process.startDate, process.interval);
+  const dates = calculateFutureReportingDates(outcome.startDate, outcome.interval);
 
   return (
     <Accordion type="single" collapsible className="w-full">
@@ -43,7 +43,6 @@ const ProcessReportingDates = ({ process, onUpdateReportingDate }: ProcessReport
         </AccordionTrigger>
         <AccordionContent>
           <div className="relative mt-6">
-            {/* Timeline line */}
             <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
             
             <div className="space-y-6">
@@ -51,7 +50,6 @@ const ProcessReportingDates = ({ process, onUpdateReportingDate }: ProcessReport
                 const dateStatus = getDateStatus(date);
                 return (
                   <div key={index} className="relative pl-12">
-                    {/* Timeline dot */}
                     <div className={`absolute left-3 w-3 h-3 rounded-full -translate-x-1.5 ${
                       dateStatus?.status === "completed" ? "bg-success" : 
                       isPast(date) ? "bg-destructive" : "bg-gray-300"
@@ -61,7 +59,7 @@ const ProcessReportingDates = ({ process, onUpdateReportingDate }: ProcessReport
                       date={date}
                       status={dateStatus}
                       statusColor={getStatusColor(date, dateStatus?.status)}
-                      onUpdate={() => onUpdateReportingDate(process.id, date)}
+                      onUpdate={() => onUpdateReportingDate(outcome.id, date)}
                     />
                   </div>
                 );
@@ -74,4 +72,4 @@ const ProcessReportingDates = ({ process, onUpdateReportingDate }: ProcessReport
   );
 };
 
-export default ProcessReportingDates;
+export default OutcomeReportingDates;

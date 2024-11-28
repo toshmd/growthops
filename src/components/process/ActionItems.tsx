@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActionItem } from "@/types/process";
+import { ActionItem } from "@/types/outcome";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
