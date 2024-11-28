@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { AlertCircle, Clock, Activity, PieChart, CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import OutcomeStatistics from "@/components/outcome/OutcomeStatistics";
+import TeamActivity from "@/components/dashboard/TeamActivity";
 import { Outcome } from "@/types/outcome";
 import { format, isWithinInterval, startOfWeek, endOfWeek } from "date-fns";
 import { PieChart as ReChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
@@ -105,69 +106,69 @@ const Index = () => {
 
         <OutcomeStatistics outcomes={mockOutcomes} />
 
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Outcome Summary</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <PieChart className="h-5 w-5 text-blue-500" />
-                <h3 className="text-lg font-semibold">Completion Rates</h3>
-              </div>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ReChart>
-                    <Pie
-                      data={completionData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {completionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index]} />
-                      ))}
-                    </Pie>
-                    <Legend />
-                  </ReChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <Card className="lg:col-span-2 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <PieChart className="h-5 w-5 text-blue-500" />
+              <h3 className="text-lg font-semibold">Completion Rates</h3>
+            </div>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <ReChart>
+                  <Pie
+                    data={completionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {completionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index]} />
+                    ))}
+                  </Pie>
+                  <Legend />
+                </ReChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
 
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <CalendarDays className="h-5 w-5 text-blue-500" />
-                <h3 className="text-lg font-semibold">Due This Week</h3>
-              </div>
-              <div className="space-y-3">
-                {dueThisWeek.map((outcome) => (
-                  <div key={outcome.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
-                    <div>
-                      <p className="font-medium text-gray-900">{outcome.title}</p>
-                      <p className="text-xs text-gray-500">
-                        Due: {format(new Date(outcome.nextDue), "MMM d")}
-                      </p>
-                    </div>
-                    {outcome.status === 'done' ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Complete
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        Pending
-                      </span>
-                    )}
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarDays className="h-5 w-5 text-blue-500" />
+              <h3 className="text-lg font-semibold">Due This Week</h3>
+            </div>
+            <div className="space-y-3">
+              {dueThisWeek.map((outcome) => (
+                <div key={outcome.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
+                  <div>
+                    <p className="font-medium text-gray-900">{outcome.title}</p>
+                    <p className="text-xs text-gray-500">
+                      Due: {format(new Date(outcome.nextDue), "MMM d")}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </Card>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    outcome.status === 'done' 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {outcome.status === 'done' ? 'Complete' : 'Pending'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <TeamActivity />
+          
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Status Overview</h2>
+            </div>
             <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity className="h-5 w-5 text-blue-500" />
-                <h3 className="text-lg font-semibold">Status Overview</h3>
-              </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Total Outcomes</span>
@@ -194,58 +195,6 @@ const Index = () => {
               </div>
             </Card>
           </div>
-        </div>
-
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Requires Attention</h2>
-          <Card className="p-4 bg-red-50 border-red-200">
-            <div className="flex items-center space-x-2 text-red-600">
-              <AlertCircle className="h-5 w-5" />
-              <span className="font-medium">2 overdue outcomes require your attention</span>
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Activity className="h-5 w-5 text-blue-500" />
-              <h2 className="text-xl font-semibold">Recent Activity</h2>
-            </div>
-            <div className="space-y-4">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-3 border-b border-gray-100 pb-3">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-600">{activity.outcome} - {activity.user}</p>
-                    <p className="text-xs text-gray-500">
-                      {format(activity.timestamp, "MMM d, yyyy 'at' h:mm a")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="h-5 w-5 text-blue-500" />
-              <h2 className="text-xl font-semibold">Upcoming Deadlines</h2>
-            </div>
-            <div className="space-y-4">
-              {upcomingDeadlines.map((outcome) => (
-                <div key={outcome.id} className="flex items-start gap-3 border-b border-gray-100 pb-3">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{outcome.title}</p>
-                    <p className="text-sm text-gray-600">{outcome.description}</p>
-                    <p className="text-xs text-gray-500">
-                      Due: {format(new Date(outcome.nextDue), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
         </div>
       </div>
     </div>
