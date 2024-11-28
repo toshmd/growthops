@@ -163,7 +163,10 @@ const Dashboard = () => {
                                       {format(date, "PPP")}
                                     </span>
                                     {isPast(date) && process.status !== "done" && (
-                                      <Badge variant="destructive" size="sm">
+                                      <Badge 
+                                        variant="destructive" 
+                                        className="text-xs px-2 py-0.5"
+                                      >
                                         Overdue
                                       </Badge>
                                     )}
