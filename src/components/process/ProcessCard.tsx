@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Process } from "@/types/process";
 import ProcessReportingDates from "./ProcessReportingDates";
-import ProcessStatusUpdate from "./ProcessStatusUpdate";
 
 interface ProcessCardProps {
   process: Process;
@@ -26,11 +25,6 @@ const ProcessCard = ({ process, onUpdateStatus, onUpdateReportingDate }: Process
       <ProcessReportingDates 
         process={process}
         onUpdateReportingDate={onUpdateReportingDate}
-      />
-
-      <ProcessStatusUpdate 
-        process={process}
-        onUpdateStatus={onUpdateStatus}
       />
     </Card>
   );
