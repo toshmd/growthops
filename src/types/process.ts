@@ -1,6 +1,6 @@
 export type ReportingDateStatus = {
   date: Date;
-  status: 'pending' | 'completed' | 'overdue';
+  status: 'pending' | 'completed' | 'blocked';
   notes?: string;
   updatedBy?: string;
   updatedAt?: Date;

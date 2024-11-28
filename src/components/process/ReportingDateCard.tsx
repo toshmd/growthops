@@ -24,6 +24,17 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
   const [selectedStatus, setSelectedStatus] = useState(status?.status || "pending");
   const [notes, setNotes] = useState(status?.notes || "");
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "text-green-600";
+      case "blocked":
+        return "text-red-600";
+      default:
+        return "text-yellow-600";
+    }
+  };
+
   const handleUpdate = () => {
     onUpdate();
     setIsEditing(false);
@@ -50,15 +61,15 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
                 <label className="text-sm font-medium mb-1 block">Status</label>
                 <Select
                   value={selectedStatus}
-                  onValueChange={(value) => setSelectedStatus(value as "pending" | "completed" | "overdue")}
+                  onValueChange={(value) => setSelectedStatus(value as "pending" | "completed" | "blocked")}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
+                    <SelectItem value="completed" className="text-green-600">Complete</SelectItem>
+                    <SelectItem value="pending" className="text-yellow-600">Pending</SelectItem>
+                    <SelectItem value="blocked" className="text-red-600">Blocked</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -82,8 +93,12 @@ const ReportingDateCard = ({ date, status, statusColor, onUpdate }: ReportingDat
               <div className="mt-2 text-sm text-gray-600">
                 <p>
                   Status:{" "}
-                  <Badge variant={status.status === "completed" ? "default" : "secondary"}>
-                    {status.status}
+                  <Badge 
+                    variant={status.status === "completed" ? "default" : "secondary"}
+                    className={getStatusColor(status.status)}
+                  >
+                    {status.status === "completed" ? "Complete" : 
+                     status.status === "blocked" ? "Blocked" : "Pending"}
                   </Badge>
                 </p>
                 {status.notes && <p className="mt-1">Notes: {status.notes}</p>}
