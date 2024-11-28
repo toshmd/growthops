@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, FolderPlus, ListTodo, BarChart3, CheckSquare } from "lucide-react";
+import { Home, FolderPlus, ListTodo, BarChart3, CheckSquare, Users } from "lucide-react";
 
 const NavBar = () => {
   return (
@@ -35,6 +35,12 @@ const NavBar = () => {
             <Link to="/tasks">
               <CheckSquare className="h-4 w-4 mr-2" />
               Tasks
+            </Link>
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link to="/users">
+              <Users className="h-4 w-4 mr-2" />
+              Users
             </Link>
           </Button>
         </div>
