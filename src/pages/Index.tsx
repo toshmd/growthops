@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import ProcessStatistics from "@/components/process/ProcessStatistics";
 import { Card } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import { Process } from "@/types/process";
 
 // Mock data for demonstration - in a real app, this would come from your backend
 const mockUser = {
@@ -11,10 +12,34 @@ const mockUser = {
   title: "Process Manager"
 };
 
-const mockProcesses = [
-  { id: 1, title: "Monthly Report", status: "pending", nextDue: "2024-03-15", startDate: new Date() },
-  { id: 2, title: "Weekly Review", status: "done", nextDue: "2024-03-10", startDate: new Date() },
-  { id: 3, title: "Daily Standup", status: "pending", nextDue: "2024-03-01", startDate: new Date() }
+const mockProcesses: Process[] = [
+  { 
+    id: 1, 
+    title: "Monthly Report", 
+    description: "Generate and submit monthly performance report",
+    interval: "monthly",
+    status: "pending", 
+    nextDue: "2024-03-15", 
+    startDate: new Date() 
+  },
+  { 
+    id: 2, 
+    title: "Weekly Review", 
+    description: "Team progress review meeting",
+    interval: "weekly",
+    status: "done", 
+    nextDue: "2024-03-10", 
+    startDate: new Date() 
+  },
+  { 
+    id: 3, 
+    title: "Daily Standup", 
+    description: "Daily team sync meeting",
+    interval: "daily",
+    status: "pending", 
+    nextDue: "2024-03-01", 
+    startDate: new Date() 
+  }
 ];
 
 const Index = () => {
