@@ -12,6 +12,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import CreateOutcome from "./CreateOutcome";
 import ManageOutcomesHeader from "@/components/manage-outcomes/ManageOutcomesHeader";
 import GoalCard from "@/components/manage-outcomes/GoalCard";
@@ -33,27 +35,77 @@ const ManageOutcomes = () => {
     id: string;
   } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  // Mock data - in a real app, this would come from an API
-  const mockOutcomes = {
-    "Revenue Growth": [
-      { id: 1, title: "Increase Sales Pipeline", interval: "weekly", year: 2024 },
-      { id: 2, title: "Customer Retention Rate", interval: "quarterly", year: 2024 },
-    ],
-    "Operational Efficiency": [
-      { id: 3, title: "Process Optimization Review", interval: "monthly", year: 2024 },
-      { id: 4, title: "Resource Utilization Analysis", interval: "annual", year: 2025 },
-    ],
-  };
+  // Fetch outcomes from Supabase
+  const { data: outcomes, isLoading } = useQuery({
+    queryKey: ['outcomes', selectedYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('outcomes')
+        .select('*')
+        .eq('status', 'pending');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
-  const handleAddGoal = () => {
+  // Group outcomes by their goals
+  const groupedOutcomes = outcomes?.reduce((acc, outcome) => {
+    // Use the first part of the title as the goal category
+    const goalCategory = outcome.title.split(':')[0] || outcome.title;
+    if (!acc[goalCategory]) {
+      acc[goalCategory] = [];
+    }
+    acc[goalCategory].push({
+      id: outcome.id,
+      title: outcome.title.split(':')[1] || outcome.title,
+      interval: outcome.interval,
+      year: new Date(outcome.created_at).getFullYear()
+    });
+    return acc;
+  }, {} as Record<string, any[]>) || {};
+
+  // Filter outcomes based on search and year
+  const filteredOutcomes = Object.entries(groupedOutcomes).reduce((acc, [goal, outcomes]) => {
+    const filteredGoalOutcomes = outcomes.filter(
+      (outcome) =>
+        new Date(outcome.created_at).getFullYear().toString() === selectedYear &&
+        (goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          outcome.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+    if (filteredGoalOutcomes.length > 0 || goal.toLowerCase().includes(searchQuery.toLowerCase())) {
+      acc[goal] = filteredGoalOutcomes;
+    }
+    return acc;
+  }, {} as Record<string, typeof outcomes>);
+
+  const handleAddGoal = async () => {
     if (newGoal.trim()) {
-      toast({
-        title: "Goal Added",
-        description: `Goal "${newGoal}" has been created.`,
-      });
-      setNewGoal("");
+      const { error } = await supabase
+        .from('outcomes')
+        .insert([
+          {
+            title: newGoal,
+            interval: 'monthly',
+            start_date: new Date().toISOString(),
+            next_due: new Date().toISOString()
+          }
+        ]);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add goal. Please try again.",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Goal Added",
+          description: `Goal "${newGoal}" has been created.`,
+        });
+        setNewGoal("");
+      }
     }
   };
 
@@ -87,19 +139,6 @@ const ManageOutcomes = () => {
     setSelectedGoal(goal);
     setShowCreateOutcome(true);
   };
-
-  const filteredOutcomes = Object.entries(mockOutcomes).reduce((acc, [goal, outcomes]) => {
-    const filteredGoalOutcomes = outcomes.filter(
-      (outcome) =>
-        outcome.year.toString() === selectedYear &&
-        (goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          outcome.title.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
-    if (filteredGoalOutcomes.length > 0 || goal.toLowerCase().includes(searchQuery.toLowerCase())) {
-      acc[goal] = filteredGoalOutcomes;
-    }
-    return acc;
-  }, {} as Record<string, typeof mockOutcomes[keyof typeof mockOutcomes]>);
 
   if (isLoading) {
     return <ManageOutcomesLoading />;
