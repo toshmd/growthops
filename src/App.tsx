@@ -14,6 +14,7 @@ import Tasks from "./pages/Tasks";
 import Users from "./pages/Users";
 import Teams from "./pages/Teams";
 import Analytics from "./pages/Analytics";
+import AdvisorDashboard from "./pages/AdvisorDashboard";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
                   <Route path="/users" element={<Users />} />
                   <Route path="/teams" element={<Teams />} />
                   <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/advisor" element={<AdvisorDashboard />} />
                 </Routes>
               </main>
             </div>
