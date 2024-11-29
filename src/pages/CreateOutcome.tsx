@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import OutcomeFormFields, { formSchema } from "@/components/outcome/OutcomeFormFields";
@@ -18,6 +18,23 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   const { toast } = useToast();
   const { selectedCompanyId } = useCompany();
   
+  // Fetch existing goals (outcomes without parent_outcome_id)
+  const { data: existingGoals = [] } = useQuery({
+    queryKey: ['goals', selectedCompanyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('outcomes')
+        .select('title')
+        .eq('company_id', selectedCompanyId)
+        .is('parent_outcome_id', null);
+      
+      if (error) throw error;
+      // Extract just the goal names from the titles
+      return data.map(outcome => outcome.title.split(':')[0] || outcome.title);
+    },
+    enabled: !!selectedCompanyId,
+  });
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -32,6 +49,10 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
 
   const createOutcomeMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
+      if (!selectedCompanyId) {
+        throw new Error("No company selected");
+      }
+
       // For each selected goal, create an outcome
       const promises = values.goals.map(async (goal) => {
         const { data, error } = await supabase
@@ -44,13 +65,15 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
               start_date: values.startDate.toISOString(),
               next_due: values.startDate.toISOString(),
               company_id: selectedCompanyId,
-              parent_outcome_id: null,
             }
           ])
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error:", error);
+          throw error;
+        }
         return data;
       });
 
@@ -75,16 +98,16 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!selectedCompanyId) {
+      toast({
+        title: "Error",
+        description: "Please select a company first.",
+        variant: "destructive",
+      });
+      return;
+    }
     createOutcomeMutation.mutate(values);
   };
-
-  const existingGoals = [
-    "Revenue Growth",
-    "Customer Satisfaction",
-    "Operational Efficiency",
-    "Employee Development",
-    "Innovation"
-  ];
 
   return (
     <div className="py-4">
