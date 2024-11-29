@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -23,6 +23,12 @@ const currentUser = {
 const TopMenu = () => {
   const { companies, selectedCompanyId, setSelectedCompanyId } = useCompany();
   const [view, setView] = useState<'companies' | 'advisor'>('companies');
+  const navigate = useNavigate();
+
+  const handleAdvisorClick = () => {
+    setView('advisor');
+    navigate('/advisor');
+  };
 
   return (
     <div className="fixed top-0 right-0 left-64 h-16 bg-background border-b z-50">
@@ -41,7 +47,7 @@ const TopMenu = () => {
             <Button
               variant={view === 'advisor' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setView('advisor')}
+              onClick={handleAdvisorClick}
               className="relative"
             >
               <UserCog className="h-4 w-4 mr-2" />
