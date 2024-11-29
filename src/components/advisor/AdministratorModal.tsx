@@ -68,9 +68,9 @@ const AdministratorModal = ({ isOpen, onClose, administrator }: AdministratorMod
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .upsert({
+          id: crypto.randomUUID(), // Generate a new UUID for the profile
           first_name: data.firstName,
           last_name: data.lastName,
-          email: data.email,
         })
         .select()
         .single();
@@ -83,6 +83,7 @@ const AdministratorModal = ({ isOpen, onClose, administrator }: AdministratorMod
         .insert({
           user_id: profile.id,
           is_advisor: data.isAdvisor,
+          role: 'advisor', // Set a default role for administrators
         });
 
       if (companyUserError) throw companyUserError;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import CompanyModal from "@/components/company/CompanyModal";
+import CompanyList from "@/components/advisor/CompanyList";
 import { supabase } from "@/integrations/supabase/client";
 import { Company } from "@/types/company";
 
@@ -34,7 +35,7 @@ const Companies = () => {
         .order('name');
       
       if (error) throw error;
-      return data;
+      return data as Company[];
     },
   });
 
@@ -101,11 +102,6 @@ const Companies = () => {
     setSelectedCompany(null);
   };
 
-  const handleEdit = (company: Company) => {
-    setSelectedCompany(company);
-    setIsModalOpen(true);
-  };
-
   const handleDelete = async () => {
     if (deleteCompanyId) {
       await deleteCompanyMutation.mutateAsync(deleteCompanyId);
@@ -129,43 +125,15 @@ const Companies = () => {
           <CardDescription>Manage and monitor all companies under your advisory.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading companies...</p>
-          ) : companies.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No companies added yet.</p>
-          ) : (
-            <div className="space-y-4">
-              {companies.map((company) => (
-                <div
-                  key={company.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div>
-                    <h3 className="font-medium">{company.name}</h3>
-                    {company.description && (
-                      <p className="text-sm text-muted-foreground">{company.description}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEdit(company)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeleteCompanyId(company.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <CompanyList
+            companies={companies}
+            isLoading={isLoading}
+            onEdit={(company) => {
+              setSelectedCompany(company);
+              setIsModalOpen(true);
+            }}
+            onDelete={(id) => setDeleteCompanyId(id)}
+          />
         </CardContent>
       </Card>
 
