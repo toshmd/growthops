@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import NavBar from "./components/NavBar";
+import TopMenu from "./components/TopMenu";
 import Index from "./pages/Index";
 import ManageOutcomes from "./pages/ManageOutcomes";
 import MyOutcomes from "./pages/MyOutcomes";
@@ -26,7 +27,8 @@ const App = () => (
           <div className="relative flex min-h-screen">
             <NavBar />
             <div className="flex-1 pl-64">
-              <main className="container mx-auto py-6">
+              <TopMenu />
+              <main className="container mx-auto py-6 mt-16">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/manage" element={<ManageOutcomes />} />
