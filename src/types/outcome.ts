@@ -20,7 +20,7 @@ export interface SupabaseOutcome {
   id: string;
   title: string;
   description: string;
-  interval: Interval;
+  interval: string;  // Changed from Interval to string since Supabase returns it as string
   next_due: string;
   status: string;
   start_date: string;

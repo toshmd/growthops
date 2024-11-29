@@ -9,7 +9,7 @@ import DueThisWeek from "@/components/dashboard/DueThisWeek";
 import StatusOverview from "@/components/dashboard/StatusOverview";
 import TeamActivity from "@/components/dashboard/TeamActivity";
 import { useToast } from "@/components/ui/use-toast";
-import { Outcome, SupabaseOutcome } from "@/types/outcome";
+import { Outcome, SupabaseOutcome, Interval } from "@/types/outcome";
 
 interface ActivityLog {
   id: string;
@@ -27,7 +27,7 @@ const transformOutcome = (outcome: SupabaseOutcome): Outcome => ({
   id: parseInt(outcome.id),
   title: outcome.title,
   description: outcome.description,
-  interval: outcome.interval,
+  interval: outcome.interval as Interval, // Type assertion since we know the values match our Interval type
   nextDue: outcome.next_due,
   status: outcome.status,
   startDate: new Date(outcome.start_date),
