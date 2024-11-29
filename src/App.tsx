@@ -41,7 +41,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (isAuthenticated === null) {
-    return null; // or a loading spinner
+    return null;
   }
 
   if (!isAuthenticated) {
@@ -51,9 +51,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppContent = () => {
+const AppLayout = () => {
   const location = useLocation();
   const isAdvisorRoute = location.pathname.startsWith('/advisor');
+
+  return (
+    <div className="relative flex min-h-screen">
+      {isAdvisorRoute ? <AdvisorNavBar /> : <NavBar />}
+      <div className="flex-1 pl-64">
+        <TopMenu />
+        <main className="container mx-auto py-6 mt-16">
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/manage" element={<ManageOutcomes />} />
+            <Route path="/my-outcomes" element={<MyOutcomes />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/advisor" element={<AdvisorDashboard />} />
+            <Route path="/advisor/companies" element={<Companies />} />
+            <Route path="/advisor/administrators" element={<Administrators />} />
+          </Routes>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+const AppContent = () => {
+  const location = useLocation();
   const isLoginPage = location.pathname === '/login';
 
   if (isLoginPage) {
@@ -68,27 +96,7 @@ const AppContent = () => {
 
   return (
     <ProtectedRoute>
-      <div className="relative flex min-h-screen">
-        {isAdvisorRoute ? <AdvisorNavBar /> : <NavBar />}
-        <div className="flex-1 pl-64">
-          <TopMenu />
-          <main className="container mx-auto py-6 mt-16">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/manage" element={<ManageOutcomes />} />
-              <Route path="/my-outcomes" element={<MyOutcomes />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/teams" element={<Teams />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/advisor" element={<AdvisorDashboard />} />
-              <Route path="/advisor/companies" element={<Companies />} />
-              <Route path="/advisor/administrators" element={<Administrators />} />
-            </Routes>
-          </main>
-        </div>
-      </div>
+      <AppLayout />
     </ProtectedRoute>
   );
 };
