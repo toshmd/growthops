@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { CompanyProvider } from "./contexts/CompanyContext";
 import NavBar from "./components/NavBar";
 import Index from "./pages/Index";
 import ManageOutcomes from "./pages/ManageOutcomes";
@@ -17,29 +18,31 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <div className="relative flex min-h-screen">
-          <NavBar />
-          <div className="flex-1 pl-64">
-            <main className="container mx-auto py-6">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/manage" element={<ManageOutcomes />} />
-                <Route path="/my-outcomes" element={<MyOutcomes />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/tasks" element={<Tasks />} />
-                <Route path="/users" element={<Users />} />
-                <Route path="/teams" element={<Teams />} />
-                <Route path="/analytics" element={<Analytics />} />
-              </Routes>
-            </main>
+    <CompanyProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <div className="relative flex min-h-screen">
+            <NavBar />
+            <div className="flex-1 pl-64">
+              <main className="container mx-auto py-6">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/manage" element={<ManageOutcomes />} />
+                  <Route path="/my-outcomes" element={<MyOutcomes />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/users" element={<Users />} />
+                  <Route path="/teams" element={<Teams />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                </Routes>
+              </main>
+            </div>
           </div>
-        </div>
-      </BrowserRouter>
-    </TooltipProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </CompanyProvider>
   </QueryClientProvider>
 );
 
