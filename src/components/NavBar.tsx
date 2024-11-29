@@ -3,11 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { NavSkeleton } from "./nav/NavSkeleton";
 import { NavError } from "./nav/NavError";
 import { NavContent } from "./nav/NavContent";
+import { useToast } from "@/components/ui/use-toast";
 
 const NavBar = () => {
   const [isAdvisor, setIsAdvisor] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkUserSetup = async () => {
@@ -42,7 +44,7 @@ const NavBar = () => {
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        if (peopleError) {
+        if (peopleError && peopleError.code !== 'PGRST116') {
           console.error('People table error:', peopleError);
           setError("Database error. Please try again later.");
           setIsLoading(false);
@@ -51,7 +53,7 @@ const NavBar = () => {
 
         // If no people record exists, create one
         if (!peopleData) {
-          const { error: createError } = await supabase
+          const { data: newPeopleData, error: createError } = await supabase
             .from('people')
             .insert([{ 
               user_id: session.user.id,
@@ -63,6 +65,11 @@ const NavBar = () => {
 
           if (createError) {
             console.error('Error creating people record:', createError);
+            toast({
+              title: "Error",
+              description: "Failed to set up your account. Please contact support.",
+              variant: "destructive",
+            });
             setError("Error setting up your account. Please contact support.");
             setIsLoading(false);
             return;
@@ -82,7 +89,7 @@ const NavBar = () => {
     };
 
     checkUserSetup();
-  }, []);
+  }, [toast]);
 
   if (isLoading) {
     return <NavSkeleton />;
