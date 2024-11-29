@@ -6,7 +6,11 @@ import { useToast } from "@/components/ui/use-toast";
 import OutcomeFormFields, { formSchema } from "@/components/outcome/OutcomeFormFields";
 import * as z from "zod";
 
-const CreateProcess = () => {
+interface CreateProcessProps {
+  selectedYear?: string;
+}
+
+const CreateProcess = ({ selectedYear }: CreateProcessProps) => {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -20,7 +24,13 @@ const CreateProcess = () => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    // Include the selected year from the parent component
+    const outcomeWithYear = {
+      ...values,
+      year: selectedYear ? parseInt(selectedYear) : new Date().getFullYear(),
+    };
+    
+    console.log(outcomeWithYear);
     toast({
       title: "Process Created",
       description: "The new process has been successfully created.",

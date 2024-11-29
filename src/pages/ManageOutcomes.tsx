@@ -205,7 +205,7 @@ const ManageOutcomes = () => {
           <DialogHeader>
             <DialogTitle>Create Outcome in {selectedGoal}</DialogTitle>
           </DialogHeader>
-          <CreateOutcome />
+          <CreateOutcome selectedYear={selectedYear} />
         </DialogContent>
       </Dialog>
     </div>
