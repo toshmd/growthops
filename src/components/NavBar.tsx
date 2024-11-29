@@ -1,47 +1,64 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, FolderPlus, ListTodo, BarChart3, CheckSquare, Users, Group, Building2, UserCog } from "lucide-react";
+import { Home, FolderPlus, ListTodo, BarChart3, CheckSquare, Users, Group, Building2, UserCog, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const NavBar = () => {
   const [isAdvisor, setIsAdvisor] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     const checkAdvisorStatus = async () => {
       try {
+        setError(null);
         const { data: { session } } = await supabase.auth.getSession();
+        
         if (!session?.user) {
+          setError("No active session found. Please log in again.");
           setIsLoading(false);
           return;
         }
 
-        const { data, error } = await supabase
+        // First check if the user has a people record
+        const { data: peopleData, error: peopleError } = await supabase
           .from('people')
-          .select('is_advisor')
+          .select('is_advisor, user_id')
           .eq('user_id', session.user.id)
           .single();
 
-        if (error) {
-          console.error('Error checking advisor status:', error);
+        if (peopleError) {
+          if (peopleError.code === 'PGRST116') {
+            setError("Your user account is not properly set up. Please contact support.");
+          } else {
+            setError(`Database error: ${peopleError.message}`);
+          }
           toast({
             title: "Error checking permissions",
-            description: "Please try logging out and back in",
+            description: "There was an error checking your permissions. Please try logging out and back in.",
             variant: "destructive",
           });
+          console.error('People table error:', peopleError);
           return;
         }
 
-        setIsAdvisor(!!data?.is_advisor);
-      } catch (error) {
+        if (!peopleData) {
+          setError("User record not found. Please contact support.");
+          return;
+        }
+
+        setIsAdvisor(!!peopleData.is_advisor);
+      } catch (error: any) {
+        setError(`Unexpected error: ${error.message}`);
         console.error('Error checking advisor status:', error);
         toast({
           title: "Error checking permissions",
-          description: "Please try logging out and back in",
+          description: "An unexpected error occurred. Please try logging out and back in.",
           variant: "destructive",
         });
       } finally {
@@ -61,6 +78,21 @@ const NavBar = () => {
               <div key={i} className="h-8 rounded bg-gray-200" />
             ))}
           </div>
+        </div>
+      </nav>
+    );
+  }
+
+  if (error) {
+    return (
+      <nav className="fixed left-0 top-0 h-screen w-64 border-r bg-sidebar-background">
+        <div className="flex h-full flex-col py-4 px-3">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="mt-2 text-sm">
+              {error}
+            </AlertDescription>
+          </Alert>
         </div>
       </nav>
     );
