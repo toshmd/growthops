@@ -24,6 +24,11 @@ import { useToast } from "@/components/ui/use-toast";
 
 const COMPANIES_PER_PAGE = 10;
 
+interface CompaniesResponse {
+  companies: DbCompany[];
+  count: number;
+}
+
 const Companies = () => {
   const [searchParams] = useSearchParams();
   const selectedCompanyId = searchParams.get('selected');
@@ -41,7 +46,7 @@ const Companies = () => {
     isFetchingNextPage,
     error,
     refetch
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<CompaniesResponse>({
     queryKey: ['companies'],
     queryFn: async ({ pageParam = 0 }) => {
       const from = (pageParam as number) * COMPANIES_PER_PAGE;
@@ -55,10 +60,11 @@ const Companies = () => {
       if (error) throw error;
       
       return {
-        companies: data || [],
+        companies: data as DbCompany[],
         count: count || 0
       };
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       const totalItems = lastPage.count;
       const currentItems = pages.reduce((acc, page) => acc + page.companies.length, 0);
@@ -117,7 +123,7 @@ const Companies = () => {
   return (
     <ErrorBoundary
       FallbackComponent={CompanyListErrorBoundary}
-      onReset={refetch}
+      onReset={() => refetch()}
     >
       <div className="space-y-6">
         <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />
