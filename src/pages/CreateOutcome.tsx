@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import OutcomeFormFields, { formSchema } from "@/components/outcome/OutcomeFormFields";
 import * as z from "zod";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface CreateProcessProps {
   selectedYear?: string;
@@ -17,6 +19,24 @@ interface CreateProcessProps {
 const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   const { toast } = useToast();
   const { selectedCompanyId } = useCompany();
+  const navigate = useNavigate();
+
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to create outcomes.",
+          variant: "destructive",
+        });
+        navigate("/login");
+      }
+    };
+    
+    checkAuth();
+  }, [navigate, toast]);
   
   // Fetch existing goals (outcomes without parent_outcome_id)
   const { data: existingGoals = [] } = useQuery({
@@ -28,8 +48,15 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
         .eq('company_id', selectedCompanyId)
         .is('parent_outcome_id', null);
       
-      if (error) throw error;
-      // Extract just the goal names from the titles
+      if (error) {
+        console.error("Error fetching goals:", error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch existing goals. Please try again.",
+          variant: "destructive",
+        });
+        return [];
+      }
       return data.map(outcome => outcome.title.split(':')[0] || outcome.title);
     },
     enabled: !!selectedCompanyId,
@@ -53,6 +80,11 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
         throw new Error("No company selected");
       }
 
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
       // For each selected goal, create an outcome
       const promises = values.goals.map(async (goal) => {
         const { data, error } = await supabase
@@ -65,6 +97,7 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
               start_date: values.startDate.toISOString(),
               next_due: values.startDate.toISOString(),
               company_id: selectedCompanyId,
+              created_by: session.user.id,
             }
           ])
           .select()
@@ -87,13 +120,13 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
       form.reset();
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error("Error creating process:", error);
       toast({
         title: "Error",
-        description: "Failed to create process. Please try again.",
+        description: error.message || "Failed to create process. Please try again.",
         variant: "destructive",
       });
-      console.error("Error creating process:", error);
     },
   });
 
