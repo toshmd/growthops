@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { Badge } from "@/components/ui/badge";
 import AdministratorModal from "@/components/advisor/AdministratorModal";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -33,13 +34,17 @@ const Administrators = () => {
           id,
           user_id,
           is_advisor,
+          role,
+          company:company_id (
+            name
+          ),
           profiles:user_id (
             first_name,
             last_name,
             email
           )
         `)
-        .eq('is_advisor', true);
+        .or('is_advisor.eq.true,role.eq.admin');
       
       if (error) throw error;
       return companyUsers;
@@ -105,6 +110,17 @@ const Administrators = () => {
                     <p className="text-sm text-muted-foreground">
                       {admin.profiles.email}
                     </p>
+                    <div className="flex gap-2 mt-1">
+                      {admin.is_advisor && (
+                        <Badge variant="secondary">Advisor</Badge>
+                      )}
+                      {admin.role === 'admin' && (
+                        <Badge variant="secondary">Company Admin</Badge>
+                      )}
+                      {admin.company && (
+                        <Badge variant="outline">{admin.company.name}</Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
