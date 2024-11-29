@@ -38,7 +38,7 @@ export const useCompanyQuery = () => {
 
       // Check if user is an advisor
       const { data: advisorData, error: advisorError } = await supabase
-        .from('company_users')
+        .from('people')
         .select('is_advisor')
         .eq('user_id', user.id)
         .eq('is_advisor', true)

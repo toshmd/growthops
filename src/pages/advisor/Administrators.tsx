@@ -29,7 +29,7 @@ const Administrators = () => {
     queryFn: async () => {
       // First check if the user is an advisor
       const { data: userData, error: userError } = await supabase
-        .from('company_users')
+        .from('people')
         .select('is_advisor')
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
@@ -39,7 +39,7 @@ const Administrators = () => {
       }
 
       const { data, error } = await supabase
-        .from('company_users')
+        .from('people')
         .select(`
           id,
           user_id,
@@ -75,7 +75,7 @@ const Administrators = () => {
   const handleDelete = async () => {
     if (deleteAdminId) {
       const { error } = await supabase
-        .from('company_users')
+        .from('people')
         .delete()
         .eq('id', deleteAdminId);
 

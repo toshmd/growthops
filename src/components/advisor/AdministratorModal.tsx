@@ -35,16 +35,16 @@ const AdministratorModal = ({ isOpen, onClose, administrator }: AdministratorMod
 
       if (profileError) throw profileError;
 
-      // Then create the company_user entry
-      const { error: companyUserError } = await supabase
-        .from('company_users')
+      // Then create the people entry
+      const { error: peopleError } = await supabase
+        .from('people')
         .insert({
           user_id: profile.id,
           is_advisor: data.isAdvisor,
           role: 'advisor',
         });
 
-      if (companyUserError) throw companyUserError;
+      if (peopleError) throw peopleError;
 
       return profile;
     },
