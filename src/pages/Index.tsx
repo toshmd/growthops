@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
-import { isWithinInterval, startOfWeek, endOfWeek } from "date-fns";
+import { isWithinInterval, startOfWeek, endOfWeek, parseISO, isPast } from "date-fns";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
 import CompletionChart from "@/components/dashboard/CompletionChart";
 import DueThisWeek from "@/components/dashboard/DueThisWeek";
@@ -16,6 +16,7 @@ const Index = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Fetch outcomes
   const { data: outcomes, isLoading: isLoadingOutcomes } = useQuery({
     queryKey: ['outcomes', selectedCompanyId],
     queryFn: async () => {
@@ -34,17 +35,39 @@ const Index = () => {
         return [];
       }
       
-      // Transform the data to match our Outcome type
-      return (data || []).map(outcome => ({
-        id: Number(outcome.id), // Convert string id to number
-        title: outcome.title,
-        description: outcome.description || '',
-        interval: outcome.interval,
-        nextDue: outcome.next_due, // Map next_due to nextDue
-        status: outcome.status || 'pending',
-        startDate: new Date(outcome.start_date), // Convert string to Date
-        teamId: outcome.team_id,
-      })) as Outcome[];
+      return data || [];
+    },
+    enabled: !!selectedCompanyId,
+  });
+
+  // Fetch activity logs
+  const { data: activityLogs, isLoading: isLoadingActivity } = useQuery({
+    queryKey: ['activity_logs', selectedCompanyId],
+    queryFn: async () => {
+      if (!selectedCompanyId) return [];
+      const { data, error } = await supabase
+        .from('activity_logs')
+        .select(`
+          *,
+          profiles:user_id (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('entity_type', 'outcome')
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        toast({
+          title: "Error loading activity",
+          description: error.message,
+          variant: "destructive",
+        });
+        return [];
+      }
+
+      return data || [];
     },
     enabled: !!selectedCompanyId,
   });
@@ -54,17 +77,17 @@ const Index = () => {
   const weekEnd = endOfWeek(today);
   
   const dueThisWeek = outcomes?.filter(outcome => {
-    const dueDate = new Date(outcome.nextDue);
+    const dueDate = parseISO(outcome.next_due);
     return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
   }) || [];
 
   const stats = {
     total: outcomes?.length || 0,
-    completed: outcomes?.filter(p => p.status === 'done').length || 0,
-    inProgress: outcomes?.filter(p => p.status === 'incomplete').length || 0,
+    completed: outcomes?.filter(p => p.status === 'completed').length || 0,
+    inProgress: outcomes?.filter(p => p.status === 'in_progress').length || 0,
     overdue: outcomes?.filter(p => {
-      const dueDate = new Date(p.nextDue);
-      return dueDate < today && p.status !== 'done';
+      const dueDate = parseISO(p.next_due);
+      return isPast(dueDate) && p.status !== 'completed';
     }).length || 0,
   };
 
@@ -78,7 +101,7 @@ const Index = () => {
   useEffect(() => {
     if (!selectedCompanyId) return;
 
-    const subscription = supabase
+    const outcomeChannel = supabase
       .channel('outcomes_changes')
       .on(
         'postgres_changes',
@@ -89,14 +112,30 @@ const Index = () => {
           filter: `company_id=eq.${selectedCompanyId}`,
         },
         () => {
-          // Invalidate and refetch
-          void queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+          queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+        }
+      )
+      .subscribe();
+
+    const activityChannel = supabase
+      .channel('activity_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activity_logs',
+          filter: `entity_type=eq.outcome`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['activity_logs'] });
         }
       )
       .subscribe();
 
     return () => {
-      subscription.unsubscribe();
+      outcomeChannel.unsubscribe();
+      activityChannel.unsubscribe();
     };
   }, [selectedCompanyId, queryClient]);
 
@@ -117,7 +156,10 @@ const Index = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TeamActivity />
+          <TeamActivity 
+            activityLogs={activityLogs || []} 
+            isLoading={isLoadingActivity} 
+          />
           <StatusOverview 
             stats={stats} 
             isLoading={isLoadingOutcomes} 
