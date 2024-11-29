@@ -110,10 +110,15 @@ const Companies = () => {
     }
   };
 
+  // Create a wrapper function for the error boundary reset
+  const handleErrorReset = () => {
+    refetch();
+  };
+
   return (
     <ErrorBoundary
       FallbackComponent={CompanyListErrorBoundary}
-      onReset={refetch}
+      onReset={handleErrorReset}
     >
       <div className="space-y-6">
         <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />
