@@ -46,25 +46,43 @@ const Companies = () => {
     isFetchingNextPage,
     error,
     refetch
-  } = useInfiniteQuery<CompaniesResponse>({
+  } = useInfiniteQuery<CompaniesResponse, Error>({
     queryKey: ['companies'],
+    initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
-      const from = (pageParam as number) * COMPANIES_PER_PAGE;
+      const from = pageParam * COMPANIES_PER_PAGE;
       const to = from + COMPANIES_PER_PAGE - 1;
+
+      // First check if the user is an advisor
+      const { data: userData, error: userError } = await supabase
+        .from('company_users')
+        .select('is_advisor')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError) {
+        throw new Error('Failed to verify advisor status');
+      }
+
+      if (!userData?.is_advisor) {
+        throw new Error('User is not an advisor');
+      }
       
       const { data, error, count } = await supabase
         .from('companies')
         .select('*', { count: 'exact' })
         .range(from, to);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching companies:', error);
+        throw error;
+      }
       
       return {
         companies: data as DbCompany[],
         count: count || 0
       };
     },
-    initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       const totalItems = lastPage.count;
       const currentItems = pages.reduce((acc, page) => acc + page.companies.length, 0);
@@ -103,6 +121,17 @@ const Companies = () => {
     }
   }, [selectedCompanyId, toast]);
 
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="bg-destructive/15 text-destructive p-4 rounded-lg">
+          <h3 className="font-semibold mb-2">Error loading companies</h3>
+          <p>{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   const handleSubmit = async (data: { name: string; description?: string }) => {
     if (selectedCompany) {
       await updateCompanyMutation.mutateAsync({ id: selectedCompany.id, data });
@@ -123,7 +152,7 @@ const Companies = () => {
   return (
     <ErrorBoundary
       FallbackComponent={CompanyListErrorBoundary}
-      onReset={() => refetch()}
+      onReset={refetch}
     >
       <div className="space-y-6">
         <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />

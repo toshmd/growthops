@@ -24,9 +24,20 @@ const Administrators = () => {
   const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const { data: administrators = [], isLoading } = useQuery({
+  const { data: administrators = [], isLoading, error } = useQuery({
     queryKey: ['administrators'],
     queryFn: async () => {
+      // First check if the user is an advisor
+      const { data: userData, error: userError } = await supabase
+        .from('company_users')
+        .select('is_advisor')
+        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+        .single();
+
+      if (userError || !userData?.is_advisor) {
+        throw new Error('Unauthorized: User is not an advisor');
+      }
+
       const { data, error } = await supabase
         .from('company_users')
         .select(`
@@ -49,6 +60,17 @@ const Administrators = () => {
       return data || [];
     },
   });
+
+  if (error) {
+    return (
+      <div className="p-4">
+        <div className="bg-destructive/15 text-destructive p-4 rounded-lg">
+          <h3 className="font-semibold mb-2">Error loading administrators</h3>
+          <p>{(error as Error).message}</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleDelete = async () => {
     if (deleteAdminId) {
