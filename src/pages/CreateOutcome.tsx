@@ -8,9 +8,10 @@ import * as z from "zod";
 
 interface CreateProcessProps {
   selectedYear?: string;
+  onSuccess?: () => void;
 }
 
-const CreateProcess = ({ selectedYear }: CreateProcessProps) => {
+const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,6 +37,7 @@ const CreateProcess = ({ selectedYear }: CreateProcessProps) => {
       description: "The new process has been successfully created.",
     });
     form.reset();
+    onSuccess?.();
   };
 
   const existingGoals = [

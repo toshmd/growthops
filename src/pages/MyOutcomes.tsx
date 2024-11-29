@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
+import { CreateOutcomeDialog } from "@/components/outcome/CreateOutcomeDialog";
 
 const MyOutcomes = () => {
   const { toast } = useToast();
@@ -145,12 +146,7 @@ const MyOutcomes = () => {
         <p className="text-muted-foreground mb-6">
           Start tracking your progress by creating your first outcome. Define what success looks like and measure it consistently.
         </p>
-        <Button asChild>
-          <Link to="/manage" className="inline-flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Create Your First Outcome
-          </Link>
-        </Button>
+        <CreateOutcomeDialog />
       </div>
     </div>
   );
@@ -158,7 +154,10 @@ const MyOutcomes = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container max-w-4xl mx-auto px-4">
-        <h1 className="text-2xl font-bold mb-8">My Outcomes</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">My Outcomes</h1>
+          <CreateOutcomeDialog />
+        </div>
         {outcomes && outcomes.length > 0 ? (
           <>
             <OutcomeStatistics outcomes={outcomes} />
