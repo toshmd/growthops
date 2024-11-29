@@ -1,32 +1,39 @@
 import { Company } from "@/types/company";
+import { DbCompany } from "@/types/database";
 import CompanyActionButtons from "./CompanyActionButtons";
-import { Skeleton } from "@/components/ui/skeleton";
+import CompanyListSkeleton from "./CompanyListSkeleton";
+import { useInView } from "react-intersection-observer";
+import { useEffect } from "react";
 
 interface CompanyListProps {
-  companies: Company[];
-  onEdit: (company: Company) => void;
+  companies: DbCompany[];
+  onEdit: (company: DbCompany) => void;
   onDelete: (id: string) => void;
   isLoading: boolean;
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  fetchNextPage?: () => void;
 }
 
-const CompanyList = ({ companies, onEdit, onDelete, isLoading }: CompanyListProps) => {
+const CompanyList = ({ 
+  companies, 
+  onEdit, 
+  onDelete, 
+  isLoading,
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage
+}: CompanyListProps) => {
+  const { ref, inView } = useInView();
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage && fetchNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
   if (isLoading) {
-    return (
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-            <div className="space-y-2">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-4 w-72" />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-9 w-9" />
-              <Skeleton className="h-9 w-9" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+    return <CompanyListSkeleton />;
   }
 
   if (companies.length === 0) {
@@ -43,6 +50,8 @@ const CompanyList = ({ companies, onEdit, onDelete, isLoading }: CompanyListProp
         <div
           key={company.id}
           className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+          role="article"
+          aria-label={`Company: ${company.name}`}
         >
           <div>
             <h3 className="font-medium">{company.name}</h3>
@@ -57,6 +66,13 @@ const CompanyList = ({ companies, onEdit, onDelete, isLoading }: CompanyListProp
           />
         </div>
       ))}
+      {(hasNextPage || isFetchingNextPage) && (
+        <div ref={ref} className="py-4 text-center">
+          <p className="text-sm text-muted-foreground">
+            {isFetchingNextPage ? "Loading more..." : "Scroll to load more"}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

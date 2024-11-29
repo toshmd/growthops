@@ -12,24 +12,22 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ErrorBoundary } from "react-error-boundary";
 import CompanyModal from "@/components/company/CompanyModal";
 import CompanyList from "@/components/advisor/CompanyList";
 import CompanyListHeader from "@/components/advisor/CompanyListHeader";
-import ErrorBoundary from "@/components/advisor/ErrorBoundary";
+import CompanyListErrorBoundary from "@/components/advisor/CompanyListErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
-import { Company } from "@/types/company";
-import { useInView } from "react-intersection-observer";
-import { useEffect } from "react";
+import { DbCompany } from "@/types/database";
 
 const COMPANIES_PER_PAGE = 10;
 
 const Companies = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<DbCompany | null>(null);
   const [deleteCompanyId, setDeleteCompanyId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { ref, inView } = useInView();
 
   const {
     data,
@@ -37,7 +35,9 @@ const Companies = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery<Company[]>({
+    error,
+    refetch
+  } = useInfiniteQuery<DbCompany[]>({
     queryKey: ['companies'],
     queryFn: async ({ pageParam = 0 }) => {
       const from = (pageParam as number) * COMPANIES_PER_PAGE;
@@ -50,21 +50,17 @@ const Companies = () => {
         .range(from, to);
       
       if (error) throw error;
-      return data as Company[];
+      return data;
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       return lastPage.length < COMPANIES_PER_PAGE ? undefined : pages.length;
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const companies = (data?.pages.flat() || []) as Company[];
+  const companies = (data?.pages.flat() || []) as DbCompany[];
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
@@ -80,7 +76,12 @@ const Companies = () => {
       
       queryClient.setQueryData(['companies'], (old: any) => ({
         pages: [
-          [{ id: 'temp-id', ...newCompany, created_at: new Date().toISOString() }],
+          [{ 
+            id: 'temp-id', 
+            ...newCompany, 
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }],
           ...(old?.pages || []),
         ],
       }));
@@ -200,7 +201,10 @@ const Companies = () => {
   };
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary
+      FallbackComponent={CompanyListErrorBoundary}
+      onReset={refetch}
+    >
       <div className="space-y-6">
         <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />
 
@@ -215,25 +219,15 @@ const Companies = () => {
             <CompanyList
               companies={companies}
               isLoading={isLoading}
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+              fetchNextPage={fetchNextPage}
               onEdit={(company) => {
                 setSelectedCompany(company);
                 setIsModalOpen(true);
               }}
               onDelete={(id) => setDeleteCompanyId(id)}
             />
-            {!isLoading && hasNextPage && (
-              <div ref={ref} className="py-4">
-                {isFetchingNextPage ? (
-                  <p className="text-center text-sm text-muted-foreground">
-                    Loading more companies...
-                  </p>
-                ) : (
-                  <p className="text-center text-sm text-muted-foreground">
-                    Scroll to load more
-                  </p>
-                )}
-              </div>
-            )}
           </CardContent>
         </Card>
 
