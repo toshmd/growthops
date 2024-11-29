@@ -4,34 +4,34 @@ import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 import { useState } from "react";
 
-interface CategoriesProps {
-  selectedCategories: string[];
-  onCategoriesChange: (categories: string[]) => void;
-  existingCategories?: string[];
+interface GoalsProps {
+  selectedGoals: string[];
+  onGoalsChange: (goals: string[]) => void;
+  existingGoals?: string[];
 }
 
-const Categories = ({
-  selectedCategories,
-  onCategoriesChange,
-  existingCategories = [],
-}: CategoriesProps) => {
-  const [newCategory, setNewCategory] = useState("");
+const Goals = ({
+  selectedGoals,
+  onGoalsChange,
+  existingGoals = [],
+}: GoalsProps) => {
+  const [newGoal, setNewGoal] = useState("");
 
-  const handleAddCategory = () => {
-    if (newCategory && !selectedCategories.includes(newCategory)) {
-      onCategoriesChange([...selectedCategories, newCategory]);
-      setNewCategory("");
+  const handleAddGoal = () => {
+    if (newGoal && !selectedGoals.includes(newGoal)) {
+      onGoalsChange([...selectedGoals, newGoal]);
+      setNewGoal("");
     }
   };
 
-  const handleRemoveCategory = (category: string) => {
-    onCategoriesChange(selectedCategories.filter((c) => c !== category));
+  const handleRemoveGoal = (goal: string) => {
+    onGoalsChange(selectedGoals.filter((g) => g !== goal));
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      handleAddCategory();
+      handleAddGoal();
     }
   };
 
@@ -39,53 +39,53 @@ const Categories = ({
     <div className="space-y-4">
       <div className="flex gap-2">
         <Input
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
+          value={newGoal}
+          onChange={(e) => setNewGoal(e.target.value)}
           onKeyPress={handleKeyPress}
-          placeholder="Add a category"
+          placeholder="Add a goal"
           className="flex-1"
         />
-        <Button onClick={handleAddCategory} type="button">
+        <Button onClick={handleAddGoal} type="button">
           Add
         </Button>
       </div>
       
-      {existingCategories.length > 0 && (
+      {existingGoals.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Suggested categories:</p>
+          <p className="text-sm text-muted-foreground">Suggested goals:</p>
           <div className="flex flex-wrap gap-2">
-            {existingCategories
-              .filter((category) => !selectedCategories.includes(category))
-              .map((category) => (
+            {existingGoals
+              .filter((goal) => !selectedGoals.includes(goal))
+              .map((goal) => (
                 <Badge
-                  key={category}
+                  key={goal}
                   variant="outline"
                   className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                  onClick={() => onCategoriesChange([...selectedCategories, category])}
+                  onClick={() => onGoalsChange([...selectedGoals, goal])}
                 >
-                  {category}
+                  {goal}
                 </Badge>
               ))}
           </div>
         </div>
       )}
 
-      {selectedCategories.length > 0 && (
+      {selectedGoals.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Selected categories:</p>
+          <p className="text-sm text-muted-foreground">Selected goals:</p>
           <div className="flex flex-wrap gap-2">
-            {selectedCategories.map((category) => (
+            {selectedGoals.map((goal) => (
               <Badge
-                key={category}
+                key={goal}
                 variant="secondary"
                 className="pr-1.5"
               >
-                {category}
+                {goal}
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-auto p-0.5 ml-1 hover:bg-transparent"
-                  onClick={() => handleRemoveCategory(category)}
+                  onClick={() => handleRemoveGoal(goal)}
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -98,4 +98,4 @@ const Categories = ({
   );
 };
 
-export default Categories;
+export default Goals;
