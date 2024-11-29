@@ -28,7 +28,7 @@ const NavBar = () => {
           .from('profiles')
           .select('id')
           .eq('id', session.user.id)
-          .maybeSingle();
+          .single();
 
         if (profileError) {
           console.error('Profile check error:', profileError);
@@ -42,7 +42,7 @@ const NavBar = () => {
           .from('people')
           .select('is_advisor')
           .eq('user_id', session.user.id)
-          .maybeSingle();
+          .single();
 
         if (peopleError && peopleError.code !== 'PGRST116') {
           console.error('People table error:', peopleError);
@@ -51,7 +51,7 @@ const NavBar = () => {
           return;
         }
 
-        // If no people record exists, create one
+        // If no people record exists, create one with the current user's ID
         if (!peopleData) {
           const { data: newPeopleData, error: createError } = await supabase
             .from('people')
