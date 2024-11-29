@@ -1,8 +1,6 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
@@ -16,8 +14,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import CompanyModal from "@/components/company/CompanyModal";
 import CompanyList from "@/components/advisor/CompanyList";
+import CompanyListHeader from "@/components/advisor/CompanyListHeader";
+import ErrorBoundary from "@/components/advisor/ErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { Company } from "@/types/company";
+import { useInView } from "react-intersection-observer";
+import { useEffect } from "react";
+
+const COMPANIES_PER_PAGE = 10;
 
 const Companies = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -25,19 +29,42 @@ const Companies = () => {
   const [deleteCompanyId, setDeleteCompanyId] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { ref, inView } = useInView();
 
-  const { data: companies = [], isLoading } = useQuery({
+  const {
+    data,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['companies'],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = pageParam * COMPANIES_PER_PAGE;
+      const to = from + COMPANIES_PER_PAGE - 1;
+      
       const { data, error } = await supabase
         .from('companies')
         .select('*')
-        .order('name');
+        .order('name')
+        .range(from, to);
       
       if (error) throw error;
       return data as Company[];
     },
+    getNextPageParam: (lastPage, pages) => {
+      if (lastPage.length < COMPANIES_PER_PAGE) return undefined;
+      return pages.length;
+    },
   });
+
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const companies = data?.pages.flat() || [];
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
@@ -46,6 +73,27 @@ const Companies = () => {
         .insert([data]);
       
       if (error) throw error;
+    },
+    onMutate: async (newCompany) => {
+      await queryClient.cancelQueries({ queryKey: ['companies'] });
+      const previousCompanies = queryClient.getQueryData(['companies']);
+      
+      queryClient.setQueryData(['companies'], (old: any) => ({
+        pages: [
+          [{ id: 'temp-id', ...newCompany, created_at: new Date().toISOString() }],
+          ...(old?.pages || []),
+        ],
+      }));
+
+      return { previousCompanies };
+    },
+    onError: (err, _, context) => {
+      queryClient.setQueryData(['companies'], context?.previousCompanies);
+      toast({
+        title: "Error",
+        description: "Failed to create company. Please try again.",
+        variant: "destructive",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -65,6 +113,28 @@ const Companies = () => {
       
       if (error) throw error;
     },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['companies'] });
+      const previousCompanies = queryClient.getQueryData(['companies']);
+      
+      queryClient.setQueryData(['companies'], (old: any) => ({
+        pages: old.pages.map((page: Company[]) =>
+          page.map((company) =>
+            company.id === id ? { ...company, ...data } : company
+          )
+        ),
+      }));
+
+      return { previousCompanies };
+    },
+    onError: (err, _, context) => {
+      queryClient.setQueryData(['companies'], context?.previousCompanies);
+      toast({
+        title: "Error",
+        description: "Failed to update company. Please try again.",
+        variant: "destructive",
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
       toast({
@@ -82,6 +152,26 @@ const Companies = () => {
         .eq('id', id);
       
       if (error) throw error;
+    },
+    onMutate: async (deletedId) => {
+      await queryClient.cancelQueries({ queryKey: ['companies'] });
+      const previousCompanies = queryClient.getQueryData(['companies']);
+      
+      queryClient.setQueryData(['companies'], (old: any) => ({
+        pages: old.pages.map((page: Company[]) =>
+          page.filter((company) => company.id !== deletedId)
+        ),
+      }));
+
+      return { previousCompanies };
+    },
+    onError: (err, _, context) => {
+      queryClient.setQueryData(['companies'], context?.previousCompanies);
+      toast({
+        title: "Error",
+        description: "Failed to delete company. Please try again.",
+        variant: "destructive",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -110,59 +200,70 @@ const Companies = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Companies</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Company
-        </Button>
+    <ErrorBoundary>
+      <div className="space-y-6">
+        <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>All Companies</CardTitle>
+            <CardDescription>
+              Manage and monitor all companies under your advisory.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CompanyList
+              companies={companies}
+              isLoading={isLoading}
+              onEdit={(company) => {
+                setSelectedCompany(company);
+                setIsModalOpen(true);
+              }}
+              onDelete={(id) => setDeleteCompanyId(id)}
+            />
+            {!isLoading && hasNextPage && (
+              <div ref={ref} className="py-4">
+                {isFetchingNextPage ? (
+                  <p className="text-center text-sm text-muted-foreground">
+                    Loading more companies...
+                  </p>
+                ) : (
+                  <p className="text-center text-sm text-muted-foreground">
+                    Scroll to load more
+                  </p>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <CompanyModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedCompany(null);
+          }}
+          company={selectedCompany || undefined}
+          onSubmit={handleSubmit}
+        />
+
+        <AlertDialog open={!!deleteCompanyId} onOpenChange={() => setDeleteCompanyId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the company
+                and all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>All Companies</CardTitle>
-          <CardDescription>Manage and monitor all companies under your advisory.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <CompanyList
-            companies={companies}
-            isLoading={isLoading}
-            onEdit={(company) => {
-              setSelectedCompany(company);
-              setIsModalOpen(true);
-            }}
-            onDelete={(id) => setDeleteCompanyId(id)}
-          />
-        </CardContent>
-      </Card>
-
-      <CompanyModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedCompany(null);
-        }}
-        company={selectedCompany || undefined}
-        onSubmit={handleSubmit}
-      />
-
-      <AlertDialog open={!!deleteCompanyId} onOpenChange={() => setDeleteCompanyId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the company
-              and all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+    </ErrorBoundary>
   );
 };
 
