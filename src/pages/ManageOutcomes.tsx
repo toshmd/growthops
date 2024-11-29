@@ -36,6 +36,10 @@ const ManageOutcomes = () => {
   const { data: outcomes, isLoading } = useQuery({
     queryKey: ['outcomes', selectedYear, selectedCompanyId],
     queryFn: async () => {
+      if (!selectedCompanyId) {
+        throw new Error("No company selected");
+      }
+
       const { data, error } = await supabase
         .from('outcomes')
         .select('*')
@@ -43,7 +47,14 @@ const ManageOutcomes = () => {
         .gte('start_date', `${selectedYear}-01-01`)
         .lte('start_date', `${selectedYear}-12-31`);
       
-      if (error) throw error;
+      if (error) {
+        toast({
+          title: "Error loading outcomes",
+          description: error.message,
+          variant: "destructive",
+        });
+        throw error;
+      }
       return data;
     },
     enabled: !!selectedCompanyId,
@@ -52,6 +63,15 @@ const ManageOutcomes = () => {
   // Add outcome mutation
   const addOutcomeMutation = useMutation({
     mutationFn: async (title: string) => {
+      if (!selectedCompanyId) {
+        throw new Error("No company selected");
+      }
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("Not authenticated");
+      }
+
       const { data, error } = await supabase
         .from('outcomes')
         .insert([
@@ -62,6 +82,7 @@ const ManageOutcomes = () => {
             start_date: new Date().toISOString(),
             next_due: new Date().toISOString(),
             description: '',
+            created_by: session.session.user.id
           }
         ])
         .select();
@@ -77,10 +98,10 @@ const ManageOutcomes = () => {
       });
       setNewGoal("");
     },
-    onError: () => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
-        description: "Failed to add goal. Please try again.",
+        description: error.message || "Failed to add goal. Please try again.",
         variant: "destructive"
       });
     }
@@ -103,6 +124,13 @@ const ManageOutcomes = () => {
         description: "Goal has been updated successfully.",
       });
       setEditingGoal(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update goal. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -123,6 +151,13 @@ const ManageOutcomes = () => {
         description: `The ${showDeleteConfirm?.type} has been deleted successfully.`,
       });
       setShowDeleteConfirm(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete. Please try again.",
+        variant: "destructive"
+      });
     }
   });
 
@@ -155,8 +190,23 @@ const ManageOutcomes = () => {
   }, {} as Record<string, typeof outcomes>);
 
   const handleAddGoal = () => {
+    if (!selectedCompanyId) {
+      toast({
+        title: "Error",
+        description: "Please select a company first.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (newGoal.trim()) {
       addOutcomeMutation.mutate(newGoal);
+    } else {
+      toast({
+        title: "Error",
+        description: "Please enter a goal title.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -247,7 +297,7 @@ const ManageOutcomes = () => {
           <DialogHeader>
             <DialogTitle>Create Outcome in {selectedGoal}</DialogTitle>
           </DialogHeader>
-          <CreateOutcome selectedYear={selectedYear} />
+          <CreateOutcome selectedYear={selectedYear} onSuccess={() => setShowCreateOutcome(false)} />
         </DialogContent>
       </Dialog>
     </div>
