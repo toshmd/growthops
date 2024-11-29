@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +19,8 @@ import CompanyListHeader from "@/components/advisor/CompanyListHeader";
 import CompanyListErrorBoundary from "@/components/advisor/CompanyListErrorBoundary";
 import { supabase } from "@/integrations/supabase/client";
 import { DbCompany } from "@/types/database";
+import { useCompanyMutations } from "@/hooks/useCompanyMutations";
+import { useToast } from "@/components/ui/use-toast";
 
 const COMPANIES_PER_PAGE = 10;
 
@@ -30,7 +31,7 @@ const Companies = () => {
   const [selectedCompany, setSelectedCompany] = useState<DbCompany | null>(null);
   const [deleteCompanyId, setDeleteCompanyId] = useState<string | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+  const { createCompanyMutation, updateCompanyMutation, deleteCompanyMutation } = useCompanyMutations();
 
   const {
     data,
@@ -40,7 +41,7 @@ const Companies = () => {
     isFetchingNextPage,
     error,
     refetch
-  } = useInfiniteQuery<DbCompany[]>({
+  } = useInfiniteQuery({
     queryKey: ['companies'],
     queryFn: async ({ pageParam = 0 }) => {
       const from = (pageParam as number) * COMPANIES_PER_PAGE;
@@ -53,138 +54,15 @@ const Companies = () => {
         .range(from, to);
       
       if (error) throw error;
-      return data;
+      return data || [];
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       return lastPage.length < COMPANIES_PER_PAGE ? undefined : pages.length;
     },
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
-  const companies = (data?.pages.flat() || []) as DbCompany[];
-
-  const createCompanyMutation = useMutation({
-    mutationFn: async (data: { name: string; description?: string }) => {
-      const { error } = await supabase
-        .from('companies')
-        .insert([data]);
-      
-      if (error) throw error;
-    },
-    onMutate: async (newCompany) => {
-      await queryClient.cancelQueries({ queryKey: ['companies'] });
-      const previousCompanies = queryClient.getQueryData(['companies']);
-      
-      queryClient.setQueryData(['companies'], (old: any) => ({
-        pages: [
-          [{ 
-            id: 'temp-id', 
-            ...newCompany, 
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }],
-          ...(old?.pages || []),
-        ],
-      }));
-
-      return { previousCompanies };
-    },
-    onError: (err, _, context) => {
-      queryClient.setQueryData(['companies'], context?.previousCompanies);
-      toast({
-        title: "Error",
-        description: "Failed to create company. Please try again.",
-        variant: "destructive",
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast({
-        title: "Success",
-        description: "Company created successfully",
-      });
-    },
-  });
-
-  const updateCompanyMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: { name: string; description?: string } }) => {
-      const { error } = await supabase
-        .from('companies')
-        .update(data)
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: ['companies'] });
-      const previousCompanies = queryClient.getQueryData(['companies']);
-      
-      queryClient.setQueryData(['companies'], (old: any) => ({
-        pages: old.pages.map((page: DbCompany[]) =>
-          page.map((company) =>
-            company.id === id ? { ...company, ...data } : company
-          )
-        ),
-      }));
-
-      return { previousCompanies };
-    },
-    onError: (err, _, context) => {
-      queryClient.setQueryData(['companies'], context?.previousCompanies);
-      toast({
-        title: "Error",
-        description: "Failed to update company. Please try again.",
-        variant: "destructive",
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast({
-        title: "Success",
-        description: "Company updated successfully",
-      });
-    },
-  });
-
-  const deleteCompanyMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onMutate: async (deletedId) => {
-      await queryClient.cancelQueries({ queryKey: ['companies'] });
-      const previousCompanies = queryClient.getQueryData(['companies']);
-      
-      queryClient.setQueryData(['companies'], (old: any) => ({
-        pages: old.pages.map((page: DbCompany[]) =>
-          page.filter((company) => company.id !== deletedId)
-        ),
-      }));
-
-      return { previousCompanies };
-    },
-    onError: (err, _, context) => {
-      queryClient.setQueryData(['companies'], context?.previousCompanies);
-      toast({
-        title: "Error",
-        description: "Failed to delete company. Please try again.",
-        variant: "destructive",
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
-      toast({
-        title: "Success",
-        description: "Company deleted successfully",
-      });
-    },
-  });
+  const companies = data?.pages?.flatMap(page => page) || [];
 
   // Load pre-selected company
   useEffect(() => {
@@ -232,14 +110,10 @@ const Companies = () => {
     }
   };
 
-  const handleErrorReset = () => {
-    refetch();
-  };
-
   return (
     <ErrorBoundary
       FallbackComponent={CompanyListErrorBoundary}
-      onReset={handleErrorReset}
+      onReset={refetch}
     >
       <div className="space-y-6">
         <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />
