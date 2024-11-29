@@ -39,6 +39,7 @@ const Login = () => {
             }
           }}
           providers={[]}
+          view="sign_up"
         />
       </Card>
     </div>
