@@ -19,11 +19,13 @@ const Login = () => {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-center text-gray-900">Welcome back</h2>
-          <p className="text-center text-gray-600 mt-2">Please sign in to continue</p>
+          <h2 className="text-2xl font-bold text-center">Welcome Back</h2>
+          <p className="text-center text-muted-foreground mt-2">
+            Please sign in to continue to your dashboard
+          </p>
         </div>
         <Auth
           supabaseClient={supabase}
@@ -32,14 +34,18 @@ const Login = () => {
             variables: {
               default: {
                 colors: {
-                  brand: '#6366f1',
-                  brandAccent: '#4f46e5',
+                  brand: 'hsl(var(--primary))',
+                  brandAccent: 'hsl(var(--primary))',
                 }
               }
+            },
+            className: {
+              container: 'flex flex-col gap-4',
+              button: 'bg-primary text-primary-foreground hover:bg-primary/90',
+              input: 'bg-background',
             }
           }}
           providers={[]}
-          view="sign_up"
         />
       </Card>
     </div>

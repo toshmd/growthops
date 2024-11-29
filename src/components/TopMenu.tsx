@@ -7,25 +7,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut, Building2, UserCog } from "lucide-react";
+import { Building2, Settings, LogOut, UserCog } from "lucide-react";
 import CompanySelector from "./company/CompanySelector";
 import CompanySelectionModal from "./company/CompanySelectionModal";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-
-// Mock user data - replace with actual user data in production
-const currentUser = {
-  name: "John Doe",
-  email: "john@example.com",
-  photo: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952",
-};
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const TopMenu = () => {
   const { companies, selectedCompanyId, setSelectedCompanyId } = useCompany();
   const [view, setView] = useState<'companies' | 'advisor'>('companies');
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        setProfile(data);
+      }
+    };
+    loadProfile();
+  }, []);
 
   const handleAdvisorClick = () => {
     setView('advisor');
@@ -35,6 +45,11 @@ const TopMenu = () => {
   const handleCompaniesClick = () => {
     setView('companies');
     setIsCompanyModalOpen(true);
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
   };
 
   return (
@@ -74,28 +89,30 @@ const TopMenu = () => {
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">
             <Avatar>
-              <AvatarImage src={currentUser.photo} alt={currentUser.name} />
+              <AvatarImage src="" alt={profile?.first_name} />
               <AvatarFallback>
-                {currentUser.name.split(' ').map(n => n[0]).join('')}
+                {profile ? `${profile.first_name?.[0]}${profile.last_name?.[0]}` : '??'}
               </AvatarFallback>
             </Avatar>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <div className="flex flex-col space-y-1 p-2">
-              <p className="text-sm font-medium">{currentUser.name}</p>
-              <p className="text-xs text-muted-foreground">{currentUser.email}</p>
+              <p className="text-sm font-medium">
+                {profile ? `${profile.first_name} ${profile.last_name}` : 'Loading...'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {profile?.title || 'No title set'}
+              </p>
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
+            <DropdownMenuItem asChild>
+              <Link to="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600">
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Log out</span>
             </DropdownMenuItem>

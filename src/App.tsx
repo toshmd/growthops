@@ -18,6 +18,7 @@ import Analytics from "./pages/Analytics";
 import AdvisorDashboard from "./pages/AdvisorDashboard";
 import Companies from "./pages/advisor/Companies";
 import Administrators from "./pages/advisor/Administrators";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
@@ -70,6 +71,7 @@ const AppLayout = () => {
             <Route path="/users" element={<Users />} />
             <Route path="/teams" element={<Teams />} />
             <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/advisor" element={<AdvisorDashboard />} />
             <Route path="/advisor/companies" element={<Companies />} />
             <Route path="/advisor/administrators" element={<Administrators />} />
