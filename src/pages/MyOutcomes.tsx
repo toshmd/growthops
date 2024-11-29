@@ -31,7 +31,18 @@ const MyOutcomes = () => {
         throw error;
       }
 
-      return data || [];
+      // Map the Supabase response to our Outcome type
+      return (data || []).map(outcome => ({
+        id: parseInt(outcome.id),
+        title: outcome.title,
+        description: outcome.description || '',
+        interval: outcome.interval as Outcome['interval'],
+        nextDue: outcome.next_due,
+        status: outcome.status || 'pending',
+        startDate: new Date(outcome.start_date),
+        teamId: outcome.team_id,
+        reportingDates: [],
+      }));
     },
     enabled: !!selectedCompanyId,
   });
@@ -132,17 +143,7 @@ const MyOutcomes = () => {
           {outcomes?.map((outcome) => (
             <OutcomeCard
               key={outcome.id}
-              outcome={{
-                id: parseInt(outcome.id),
-                title: outcome.title,
-                description: outcome.description || '',
-                interval: outcome.interval as Outcome['interval'],
-                nextDue: outcome.next_due,
-                status: outcome.status || 'pending',
-                startDate: new Date(outcome.start_date),
-                teamId: outcome.team_id,
-                reportingDates: [],
-              }}
+              outcome={outcome}
               onUpdateStatus={handleUpdateStatus}
               onUpdateReportingDate={handleUpdateReportingDate}
             />
