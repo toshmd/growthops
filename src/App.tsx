@@ -20,18 +20,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="relative flex min-h-screen flex-col">
+        <div className="relative flex min-h-screen">
           <NavBar />
-          <div className="flex-1">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/manage" element={<ManageOutcomes />} />
-              <Route path="/my-outcomes" element={<MyOutcomes />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/tasks" element={<Tasks />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/teams" element={<Teams />} />
-            </Routes>
+          <div className="flex-1 pl-64">
+            <main className="container mx-auto py-6">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/manage" element={<ManageOutcomes />} />
+                <Route path="/my-outcomes" element={<MyOutcomes />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/tasks" element={<Tasks />} />
+                <Route path="/users" element={<Users />} />
+                <Route path="/teams" element={<Teams />} />
+              </Routes>
+            </main>
           </div>
         </div>
       </BrowserRouter>
