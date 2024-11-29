@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, Settings, LogOut, Building2, UserCog } from "lucide-react";
 import CompanySelector from "./company/CompanySelector";
+import CompanySelectionModal from "./company/CompanySelectionModal";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -23,11 +24,17 @@ const currentUser = {
 const TopMenu = () => {
   const { companies, selectedCompanyId, setSelectedCompanyId } = useCompany();
   const [view, setView] = useState<'companies' | 'advisor'>('companies');
+  const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleAdvisorClick = () => {
     setView('advisor');
     navigate('/advisor');
+  };
+
+  const handleCompaniesClick = () => {
+    setView('companies');
+    setIsCompanyModalOpen(true);
   };
 
   return (
@@ -38,7 +45,7 @@ const TopMenu = () => {
             <Button
               variant={view === 'companies' ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setView('companies')}
+              onClick={handleCompaniesClick}
               className="relative"
             >
               <Building2 className="h-4 w-4 mr-2" />
@@ -95,6 +102,11 @@ const TopMenu = () => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <CompanySelectionModal 
+        isOpen={isCompanyModalOpen}
+        onClose={() => setIsCompanyModalOpen(false)}
+      />
     </div>
   );
 };
