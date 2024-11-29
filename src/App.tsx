@@ -63,7 +63,7 @@ const AppLayout = () => {
         <TopMenu />
         <main className="container mx-auto py-6 mt-16">
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/manage" element={<ManageOutcomes />} />
             <Route path="/my-outcomes" element={<MyOutcomes />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -83,10 +83,38 @@ const AppLayout = () => {
 };
 
 const AppContent = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const location = useLocation();
-  const isLoginPage = location.pathname === '/login';
 
-  if (isLoginPage) {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Show nothing while checking authentication
+  if (isAuthenticated === null) {
+    return null;
+  }
+
+  // If not authenticated and not on login page, redirect to login
+  if (!isAuthenticated && location.pathname !== '/login') {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If authenticated and on login page, redirect to dashboard
+  if (isAuthenticated && location.pathname === '/login') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Show login page
+  if (!isAuthenticated) {
     return (
       <main>
         <Routes>
@@ -96,11 +124,8 @@ const AppContent = () => {
     );
   }
 
-  return (
-    <ProtectedRoute>
-      <AppLayout />
-    </ProtectedRoute>
-  );
+  // Show protected routes
+  return <ProtectedRoute><AppLayout /></ProtectedRoute>;
 };
 
 const App = () => (
