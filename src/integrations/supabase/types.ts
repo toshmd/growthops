@@ -131,6 +131,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           id: string
+          is_advisor: boolean | null
           role: string
           user_id: string | null
         }
@@ -138,6 +139,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          is_advisor?: boolean | null
           role: string
           user_id?: string | null
         }
@@ -145,6 +147,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           id?: string
+          is_advisor?: boolean | null
           role?: string
           user_id?: string | null
         }

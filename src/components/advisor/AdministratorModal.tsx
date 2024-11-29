@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,56 +15,107 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const formSchema = z.object({
   firstName: z.string().min(2, "First name must be at least 2 characters"),
   lastName: z.string().min(2, "Last name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
+  isAdvisor: z.boolean().default(false),
 });
 
 interface AdministratorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  administrator?: any;
 }
 
-const AdministratorModal = ({ isOpen, onClose }: AdministratorModalProps) => {
+const AdministratorModal = ({ isOpen, onClose, administrator }: AdministratorModalProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
       email: "",
+      isAdvisor: false,
+    },
+  });
+
+  useEffect(() => {
+    if (administrator) {
+      form.reset({
+        firstName: administrator.profiles.first_name,
+        lastName: administrator.profiles.last_name,
+        email: administrator.profiles.email,
+        isAdvisor: administrator.is_advisor,
+      });
+    }
+  }, [administrator, form]);
+
+  const createAdminMutation = useMutation({
+    mutationFn: async (data: z.infer<typeof formSchema>) => {
+      // First create or update the profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .upsert({
+          first_name: data.firstName,
+          last_name: data.lastName,
+          email: data.email,
+        })
+        .select()
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Then create the company_user entry
+      const { error: companyUserError } = await supabase
+        .from('company_users')
+        .insert({
+          user_id: profile.id,
+          is_advisor: data.isAdvisor,
+        });
+
+      if (companyUserError) throw companyUserError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['administrators'] });
+      toast({
+        title: "Success",
+        description: "Administrator created successfully",
+      });
+      onClose();
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create administrator",
+        variant: "destructive",
+      });
     },
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    try {
-      // Here you would typically make an API call to create the administrator
-      toast({
-        title: "Administrator created",
-        description: "New administrator has been created successfully.",
-      });
-      onClose();
-      form.reset();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Something went wrong. Please try again.",
-        variant: "destructive",
-      });
-    }
+    await createAdminMutation.mutateAsync(data);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create Administrator</DialogTitle>
+          <DialogTitle>
+            {administrator ? "Edit Administrator" : "Create Administrator"}
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -100,9 +152,33 @@ const AdministratorModal = ({ isOpen, onClose }: AdministratorModalProps) => {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="john.doe@example.com" type="email" {...field} />
+                    <Input
+                      placeholder="john.doe@example.com"
+                      type="email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="isAdvisor"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>Advisor Access</FormLabel>
+                    <FormDescription>
+                      Grant access to the advisor portal and management capabilities
+                    </FormDescription>
+                  </div>
                 </FormItem>
               )}
             />
@@ -110,7 +186,9 @@ const AdministratorModal = ({ isOpen, onClose }: AdministratorModalProps) => {
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">Create</Button>
+              <Button type="submit">
+                {administrator ? "Update" : "Create"}
+              </Button>
             </div>
           </form>
         </Form>

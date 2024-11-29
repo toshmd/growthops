@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { Company } from "@/types/company";
 
 const formSchema = z.object({
   name: z.string().min(2, "Company name must be at least 2 characters"),
@@ -29,31 +29,28 @@ const formSchema = z.object({
 interface CompanyModalProps {
   isOpen: boolean;
   onClose: () => void;
+  company?: Company;
   onSubmit: (data: z.infer<typeof formSchema>) => void;
 }
 
-const CompanyModal = ({ isOpen, onClose, onSubmit }: CompanyModalProps) => {
+const CompanyModal = ({ isOpen, onClose, company, onSubmit }: CompanyModalProps) => {
   const { toast } = useToast();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: company?.name || "",
+      description: company?.description || "",
     },
   });
 
   const handleSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       await onSubmit(data);
-      toast({
-        title: "Success",
-        description: "Company has been created successfully.",
-      });
       onClose();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create company. Please try again.",
+        description: "Failed to save company. Please try again.",
         variant: "destructive",
       });
     }
@@ -63,7 +60,7 @@ const CompanyModal = ({ isOpen, onClose, onSubmit }: CompanyModalProps) => {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Company</DialogTitle>
+          <DialogTitle>{company ? "Edit Company" : "Create Company"}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -100,7 +97,7 @@ const CompanyModal = ({ isOpen, onClose, onSubmit }: CompanyModalProps) => {
               <Button variant="outline" type="button" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit">Create</Button>
+              <Button type="submit">{company ? "Update" : "Create"}</Button>
             </div>
           </form>
         </Form>
