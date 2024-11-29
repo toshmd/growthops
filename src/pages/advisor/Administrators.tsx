@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import AdministratorModal from "@/components/advisor/AdministratorModal";
@@ -23,12 +23,11 @@ const Administrators = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
   const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const { data: administrators = [], isLoading } = useQuery({
     queryKey: ['administrators'],
     queryFn: async () => {
-      const { data: companyUsers, error } = await supabase
+      const { data, error } = await supabase
         .from('company_users')
         .select(`
           id,
@@ -44,34 +43,32 @@ const Administrators = () => {
             email
           )
         `)
-        .or('is_advisor.eq.true,role.eq.admin');
+        .eq('is_advisor', true);
       
       if (error) throw error;
-      return companyUsers;
-    },
-  });
-
-  const deleteAdminMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('company_users')
-        .delete()
-        .eq('id', id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['administrators'] });
-      toast({
-        title: "Success",
-        description: "Administrator removed successfully",
-      });
+      return data || [];
     },
   });
 
   const handleDelete = async () => {
     if (deleteAdminId) {
-      await deleteAdminMutation.mutateAsync(deleteAdminId);
+      const { error } = await supabase
+        .from('company_users')
+        .delete()
+        .eq('id', deleteAdminId);
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete administrator",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Administrator removed successfully",
+        });
+      }
       setDeleteAdminId(null);
     }
   };
@@ -105,10 +102,10 @@ const Administrators = () => {
                 >
                   <div>
                     <h3 className="font-medium">
-                      {admin.profiles.first_name} {admin.profiles.last_name}
+                      {admin.profiles?.first_name} {admin.profiles?.last_name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {admin.profiles.email}
+                      {admin.profiles?.email}
                     </p>
                     <div className="flex gap-2 mt-1">
                       {admin.is_advisor && (
@@ -125,17 +122,21 @@ const Administrators = () => {
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
-                      size="icon"
-                      onClick={() => setSelectedAdmin(admin)}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedAdmin(admin);
+                        setIsModalOpen(true);
+                      }}
                     >
-                      <Pencil className="h-4 w-4" />
+                      Edit
                     </Button>
                     <Button
                       variant="ghost"
-                      size="icon"
+                      size="sm"
                       onClick={() => setDeleteAdminId(admin.id)}
+                      className="text-red-500 hover:text-red-600"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      Delete
                     </Button>
                   </div>
                 </div>

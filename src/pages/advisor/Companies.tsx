@@ -47,22 +47,26 @@ const Companies = () => {
       const from = (pageParam as number) * COMPANIES_PER_PAGE;
       const to = from + COMPANIES_PER_PAGE - 1;
       
-      const { data, error } = await supabase
+      const { data, error, count } = await supabase
         .from('companies')
-        .select('*')
-        .order('name')
+        .select('*', { count: 'exact' })
         .range(from, to);
       
       if (error) throw error;
-      return data || [];
+      
+      return {
+        companies: data || [],
+        count: count || 0
+      };
     },
-    initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
-      return lastPage.length < COMPANIES_PER_PAGE ? undefined : pages.length;
+      const totalItems = lastPage.count;
+      const currentItems = pages.reduce((acc, page) => acc + page.companies.length, 0);
+      return currentItems < totalItems ? pages.length : undefined;
     },
   });
 
-  const companies = data?.pages?.flatMap(page => page) || [];
+  const companies = data?.pages.flatMap(page => page.companies) || [];
 
   // Load pre-selected company
   useEffect(() => {
@@ -110,15 +114,10 @@ const Companies = () => {
     }
   };
 
-  // Create a wrapper function for the error boundary reset
-  const handleErrorReset = () => {
-    refetch();
-  };
-
   return (
     <ErrorBoundary
       FallbackComponent={CompanyListErrorBoundary}
-      onReset={handleErrorReset}
+      onReset={refetch}
     >
       <div className="space-y-6">
         <CompanyListHeader onNewCompany={() => setIsModalOpen(true)} />
