@@ -37,10 +37,10 @@ const Companies = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery({
+  } = useInfiniteQuery<Company[]>({
     queryKey: ['companies'],
     queryFn: async ({ pageParam = 0 }) => {
-      const from = pageParam * COMPANIES_PER_PAGE;
+      const from = (pageParam as number) * COMPANIES_PER_PAGE;
       const to = from + COMPANIES_PER_PAGE - 1;
       
       const { data, error } = await supabase
@@ -52,9 +52,9 @@ const Companies = () => {
       if (error) throw error;
       return data as Company[];
     },
+    initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
-      if (lastPage.length < COMPANIES_PER_PAGE) return undefined;
-      return pages.length;
+      return lastPage.length < COMPANIES_PER_PAGE ? undefined : pages.length;
     },
   });
 
@@ -64,7 +64,7 @@ const Companies = () => {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const companies = data?.pages.flat() || [];
+  const companies = (data?.pages.flat() || []) as Company[];
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
