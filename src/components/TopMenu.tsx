@@ -7,17 +7,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Building2, Settings, LogOut, UserCog } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import CompanySelector from "./company/CompanySelector";
 import CompanySelectionModal from "./company/CompanySelectionModal";
 import { useCompany } from "@/contexts/CompanyContext";
-import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const TopMenu = () => {
   const { companies, selectedCompanyId, setSelectedCompanyId } = useCompany();
-  const [view, setView] = useState<'companies' | 'advisor'>('companies');
   const [isCompanyModalOpen, setIsCompanyModalOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
@@ -37,16 +35,6 @@ const TopMenu = () => {
     loadProfile();
   }, []);
 
-  const handleAdvisorClick = () => {
-    setView('advisor');
-    navigate('/advisor');
-  };
-
-  const handleCompaniesClick = () => {
-    setView('companies');
-    setIsCompanyModalOpen(true);
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate('/login');
@@ -55,36 +43,11 @@ const TopMenu = () => {
   return (
     <div className="fixed top-0 right-0 left-64 h-16 bg-background border-b z-50">
       <div className="h-full px-4 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex rounded-lg border p-1 bg-muted/30">
-            <Button
-              variant={view === 'companies' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={handleCompaniesClick}
-              className="relative"
-            >
-              <Building2 className="h-4 w-4 mr-2" />
-              Companies
-            </Button>
-            <Button
-              variant={view === 'advisor' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={handleAdvisorClick}
-              className="relative"
-            >
-              <UserCog className="h-4 w-4 mr-2" />
-              Advisor
-            </Button>
-          </div>
-          
-          {view === 'companies' && (
-            <CompanySelector
-              companies={companies}
-              selectedCompanyId={selectedCompanyId}
-              onCompanyChange={setSelectedCompanyId}
-            />
-          )}
-        </div>
+        <CompanySelector
+          companies={companies}
+          selectedCompanyId={selectedCompanyId}
+          onCompanyChange={setSelectedCompanyId}
+        />
         
         <DropdownMenu>
           <DropdownMenuTrigger className="focus:outline-none">

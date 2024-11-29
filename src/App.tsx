@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { CompanyProvider } from "./contexts/CompanyContext";
 import NavBar from "./components/NavBar";
-import AdvisorNavBar from "./components/advisor/AdvisorNavBar";
 import TopMenu from "./components/TopMenu";
 import Index from "./pages/Index";
 import ManageOutcomes from "./pages/ManageOutcomes";
@@ -53,12 +52,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppLayout = () => {
-  const location = useLocation();
-  const isAdvisorRoute = location.pathname.startsWith('/advisor');
-
   return (
     <div className="relative flex min-h-screen">
-      {isAdvisorRoute ? <AdvisorNavBar /> : <NavBar />}
+      <NavBar />
       <div className="flex-1 pl-64">
         <TopMenu />
         <main className="container mx-auto py-6 mt-16">
@@ -98,22 +94,18 @@ const AppContent = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Show nothing while checking authentication
   if (isAuthenticated === null) {
     return null;
   }
 
-  // If not authenticated and not on login page, redirect to login
   if (!isAuthenticated && location.pathname !== '/login') {
     return <Navigate to="/login" replace />;
   }
 
-  // If authenticated and on login page, redirect to dashboard
   if (isAuthenticated && location.pathname === '/login') {
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Show login page
   if (!isAuthenticated) {
     return (
       <main>
@@ -124,7 +116,6 @@ const AppContent = () => {
     );
   }
 
-  // Show protected routes
   return <ProtectedRoute><AppLayout /></ProtectedRoute>;
 };
 
