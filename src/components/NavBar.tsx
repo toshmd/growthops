@@ -12,12 +12,12 @@ const NavBar = () => {
   useEffect(() => {
     const checkAdvisorStatus = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
           const { data, error } = await supabase
             .from('people')
             .select('is_advisor')
-            .eq('user_id', user.id)
+            .eq('user_id', session.user.id)
             .single();
             
           if (error) {
