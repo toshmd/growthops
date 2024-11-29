@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const NavBar = () => {
   const [isAdvisor, setIsAdvisor] = useState(false);
@@ -14,7 +15,7 @@ const NavBar = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkAdvisorStatus = async () => {
+    const checkUserSetup = async () => {
       try {
         setError(null);
         const { data: { session } } = await supabase.auth.getSession();
@@ -25,7 +26,20 @@ const NavBar = () => {
           return;
         }
 
-        // First check if the user has a people record
+        // First check if user has a profile
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', session.user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Profile check error:', profileError);
+          setError("Profile setup incomplete. Please try logging out and back in.");
+          return;
+        }
+
+        // Then check if the user has a people record
         const { data: peopleData, error: peopleError } = await supabase
           .from('people')
           .select('is_advisor, user_id')
@@ -34,39 +48,42 @@ const NavBar = () => {
 
         if (peopleError) {
           if (peopleError.code === 'PGRST116') {
-            setError("Your user account is not properly set up. Please contact support.");
+            // Create a people record for the user
+            const { error: createError } = await supabase
+              .from('people')
+              .insert([
+                { 
+                  user_id: session.user.id,
+                  role: 'user'
+                }
+              ]);
+
+            if (createError) {
+              console.error('Error creating people record:', createError);
+              setError("Error setting up your account. Please contact support.");
+              return;
+            }
+
+            // Set as non-advisor by default
+            setIsAdvisor(false);
           } else {
-            setError(`Database error: ${peopleError.message}`);
+            console.error('People table error:', peopleError);
+            setError("Database error. Please try again later.");
+            return;
           }
-          toast({
-            title: "Error checking permissions",
-            description: "There was an error checking your permissions. Please try logging out and back in.",
-            variant: "destructive",
-          });
-          console.error('People table error:', peopleError);
-          return;
+        } else {
+          setIsAdvisor(!!peopleData?.is_advisor);
         }
 
-        if (!peopleData) {
-          setError("User record not found. Please contact support.");
-          return;
-        }
-
-        setIsAdvisor(!!peopleData.is_advisor);
       } catch (error: any) {
-        setError(`Unexpected error: ${error.message}`);
-        console.error('Error checking advisor status:', error);
-        toast({
-          title: "Error checking permissions",
-          description: "An unexpected error occurred. Please try logging out and back in.",
-          variant: "destructive",
-        });
+        console.error('Error in checkUserSetup:', error);
+        setError(`Unexpected error. Please try again later.`);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAdvisorStatus();
+    checkUserSetup();
   }, [toast]);
 
   if (isLoading) {
@@ -75,7 +92,7 @@ const NavBar = () => {
         <div className="flex h-full flex-col py-4">
           <div className="animate-pulse space-y-4 px-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-8 rounded bg-gray-200" />
+              <Skeleton key={i} className="h-8 rounded" />
             ))}
           </div>
         </div>
