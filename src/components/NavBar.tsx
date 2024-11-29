@@ -4,38 +4,53 @@ import { Home, FolderPlus, ListTodo, BarChart3, CheckSquare, Users, Group, Build
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/components/ui/use-toast";
 
 const NavBar = () => {
   const [isAdvisor, setIsAdvisor] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAdvisorStatus = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          const { data, error } = await supabase
-            .from('people')
-            .select('is_advisor')
-            .eq('user_id', session.user.id)
-            .single();
-            
-          if (error) {
-            console.error('Error checking advisor status:', error);
-            return;
-          }
-          
-          setIsAdvisor(!!data?.is_advisor);
+        if (!session?.user) {
+          setIsLoading(false);
+          return;
         }
+
+        const { data, error } = await supabase
+          .from('people')
+          .select('is_advisor')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error checking advisor status:', error);
+          toast({
+            title: "Error checking permissions",
+            description: "Please try logging out and back in",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        setIsAdvisor(!!data?.is_advisor);
       } catch (error) {
         console.error('Error checking advisor status:', error);
+        toast({
+          title: "Error checking permissions",
+          description: "Please try logging out and back in",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAdvisorStatus();
-  }, []);
+  }, [toast]);
 
   if (isLoading) {
     return (

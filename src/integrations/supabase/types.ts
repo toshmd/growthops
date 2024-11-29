@@ -430,6 +430,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      is_user_advisor: {
+        Args: {
+          user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
