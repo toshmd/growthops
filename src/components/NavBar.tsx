@@ -7,22 +7,49 @@ import { Separator } from "@/components/ui/separator";
 
 const NavBar = () => {
   const [isAdvisor, setIsAdvisor] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const checkAdvisorStatus = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('people')
-          .select('is_advisor')
-          .eq('user_id', user.id)
-          .eq('is_advisor', true)
-          .single();
-        setIsAdvisor(!!data);
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('people')
+            .select('is_advisor')
+            .eq('user_id', user.id)
+            .single();
+            
+          if (error) {
+            console.error('Error checking advisor status:', error);
+            return;
+          }
+          
+          setIsAdvisor(!!data?.is_advisor);
+        }
+      } catch (error) {
+        console.error('Error checking advisor status:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
+
     checkAdvisorStatus();
   }, []);
+
+  if (isLoading) {
+    return (
+      <nav className="fixed left-0 top-0 h-screen w-64 border-r bg-sidebar-background">
+        <div className="flex h-full flex-col py-4">
+          <div className="animate-pulse space-y-4 px-3">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-8 rounded bg-gray-200" />
+            ))}
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="fixed left-0 top-0 h-screen w-64 border-r bg-sidebar-background">
