@@ -6,6 +6,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { ClipboardList, Plus } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const MyOutcomes = () => {
   const { toast } = useToast();
@@ -134,21 +137,45 @@ const MyOutcomes = () => {
     );
   }
 
+  const EmptyState = () => (
+    <div className="text-center py-16 px-4">
+      <div className="max-w-md mx-auto">
+        <ClipboardList className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">No outcomes yet</h3>
+        <p className="text-muted-foreground mb-6">
+          Start tracking your progress by creating your first outcome. Define what success looks like and measure it consistently.
+        </p>
+        <Button asChild>
+          <Link to="/manage" className="inline-flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Create Your First Outcome
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container max-w-4xl mx-auto px-4">
         <h1 className="text-2xl font-bold mb-8">My Outcomes</h1>
-        <OutcomeStatistics outcomes={outcomes || []} />
-        <div className="space-y-6">
-          {outcomes?.map((outcome) => (
-            <OutcomeCard
-              key={outcome.id}
-              outcome={outcome}
-              onUpdateStatus={handleUpdateStatus}
-              onUpdateReportingDate={handleUpdateReportingDate}
-            />
-          ))}
-        </div>
+        {outcomes && outcomes.length > 0 ? (
+          <>
+            <OutcomeStatistics outcomes={outcomes} />
+            <div className="space-y-6">
+              {outcomes.map((outcome) => (
+                <OutcomeCard
+                  key={outcome.id}
+                  outcome={outcome}
+                  onUpdateStatus={handleUpdateStatus}
+                  onUpdateReportingDate={handleUpdateReportingDate}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <EmptyState />
+        )}
       </div>
     </div>
   );
