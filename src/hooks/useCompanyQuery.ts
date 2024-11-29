@@ -1,6 +1,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DbCompany } from "@/types/database";
+import { useToast } from "@/components/ui/use-toast";
 
 interface CompaniesResponse {
   companies: DbCompany[];
@@ -10,6 +11,8 @@ interface CompaniesResponse {
 const COMPANIES_PER_PAGE = 10;
 
 export const useCompanyQuery = () => {
+  const { toast } = useToast();
+
   return useInfiniteQuery<CompaniesResponse, Error>({
     queryKey: ['companies'],
     initialPageParam: 0,
@@ -17,28 +20,65 @@ export const useCompanyQuery = () => {
       const from = Number(pageParam) * COMPANIES_PER_PAGE;
       const to = from + COMPANIES_PER_PAGE - 1;
 
-      // First check if the user is an advisor
-      const { data: userData, error: userError } = await supabase
-        .from('company_users')
-        .select('is_advisor')
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
+      // First get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
       if (userError) {
-        throw new Error('Failed to verify advisor status');
+        toast({
+          title: "Authentication Error",
+          description: "Please try logging in again",
+          variant: "destructive",
+        });
+        throw new Error('Authentication failed');
       }
 
-      if (!userData?.is_advisor) {
+      if (!user) {
+        throw new Error('No authenticated user');
+      }
+
+      // Check if user is an advisor
+      const { data: advisorData, error: advisorError } = await supabase
+        .from('company_users')
+        .select('is_advisor')
+        .eq('user_id', user.id)
+        .eq('is_advisor', true)
+        .single();
+
+      if (advisorError) {
+        // If no advisor record found, show specific message
+        if (advisorError.code === 'PGRST116') {
+          toast({
+            title: "Access Denied",
+            description: "You don't have advisor privileges",
+            variant: "destructive",
+          });
+          throw new Error('User is not an advisor');
+        }
+        throw advisorError;
+      }
+
+      if (!advisorData?.is_advisor) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have advisor privileges",
+          variant: "destructive",
+        });
         throw new Error('User is not an advisor');
       }
       
+      // Fetch companies if user is verified as advisor
       const { data, error, count } = await supabase
         .from('companies')
         .select('*', { count: 'exact' })
-        .range(from, to);
+        .range(from, to)
+        .order('name');
       
       if (error) {
-        console.error('Error fetching companies:', error);
+        toast({
+          title: "Error fetching companies",
+          description: error.message,
+          variant: "destructive",
+        });
         throw error;
       }
       
