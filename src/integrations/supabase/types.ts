@@ -126,48 +126,6 @@ export type Database = {
           },
         ]
       }
-      company_users: {
-        Row: {
-          company_id: string | null
-          created_at: string
-          id: string
-          is_advisor: boolean | null
-          role: string
-          user_id: string | null
-        }
-        Insert: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          is_advisor?: boolean | null
-          role: string
-          user_id?: string | null
-        }
-        Update: {
-          company_id?: string | null
-          created_at?: string
-          id?: string
-          is_advisor?: boolean | null
-          role?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_users_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_users_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       notifications: {
         Row: {
           content: string
@@ -280,6 +238,58 @@ export type Database = {
           },
         ]
       }
+      people: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          id: string
+          is_advisor: boolean | null
+          role: string
+          team_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_advisor?: boolean | null
+          role: string
+          team_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          id?: string
+          is_advisor?: boolean | null
+          role?: string
+          team_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -370,45 +380,6 @@ export type Database = {
             columns: ["outcome_id"]
             isOneToOne: false
             referencedRelation: "outcomes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      team_members: {
-        Row: {
-          created_at: string
-          id: string
-          role: string
-          team_id: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          role: string
-          team_id?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          role?: string
-          team_id?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_members_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "team_members_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
