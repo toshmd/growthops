@@ -33,6 +33,7 @@ export const formSchema = z.object({
   startDate: z.date({
     required_error: "Start date is required",
   }),
+  year: z.number().min(2000).max(2100),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -155,6 +156,34 @@ const OutcomeFormFields = ({ form, existingGoals }: OutcomeFormFieldsProps) => {
             <FormControl>
               <Input placeholder="Enter owner name" {...field} />
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={form.control}
+        name="year"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Year</FormLabel>
+            <Select
+              onValueChange={(value) => field.onChange(parseInt(value))}
+              defaultValue={field.value?.toString()}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select year" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
