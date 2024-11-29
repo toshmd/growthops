@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Users from "./pages/Users";
 import Teams from "./pages/Teams";
+import Analytics from "./pages/Analytics";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/users" element={<Users />} />
                 <Route path="/teams" element={<Teams />} />
+                <Route path="/analytics" element={<Analytics />} />
               </Routes>
             </main>
           </div>
