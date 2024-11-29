@@ -16,7 +16,23 @@ export type ReportingDateStatus = {
   actionItems: ActionItem[];
 };
 
-export type Outcome = {
+export interface SupabaseOutcome {
+  id: string;
+  title: string;
+  description: string;
+  interval: Interval;
+  next_due: string;
+  status: string;
+  start_date: string;
+  team_id?: string;
+  company_id?: string;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  parent_outcome_id?: string;
+}
+
+export interface Outcome {
   id: number;
   title: string;
   description: string;
@@ -26,4 +42,4 @@ export type Outcome = {
   startDate: Date;
   teamId?: string;
   reportingDates?: ReportingDateStatus[];
-};
+}

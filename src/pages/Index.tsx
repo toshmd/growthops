@@ -9,7 +9,31 @@ import DueThisWeek from "@/components/dashboard/DueThisWeek";
 import StatusOverview from "@/components/dashboard/StatusOverview";
 import TeamActivity from "@/components/dashboard/TeamActivity";
 import { useToast } from "@/components/ui/use-toast";
-import { Outcome } from "@/types/outcome";
+import { Outcome, SupabaseOutcome } from "@/types/outcome";
+
+interface ActivityLog {
+  id: string;
+  action: string;
+  entity_id: string;
+  details: any;
+  created_at: string;
+  profiles: {
+    first_name: string;
+    last_name: string;
+  } | null;
+}
+
+const transformOutcome = (outcome: SupabaseOutcome): Outcome => ({
+  id: parseInt(outcome.id),
+  title: outcome.title,
+  description: outcome.description,
+  interval: outcome.interval,
+  nextDue: outcome.next_due,
+  status: outcome.status,
+  startDate: new Date(outcome.start_date),
+  teamId: outcome.team_id,
+  reportingDates: []
+});
 
 const Index = () => {
   const { selectedCompanyId } = useCompany();
@@ -35,7 +59,7 @@ const Index = () => {
         return [];
       }
       
-      return data || [];
+      return (data || []).map(transformOutcome);
     },
     enabled: !!selectedCompanyId,
   });
@@ -49,7 +73,7 @@ const Index = () => {
         .from('activity_logs')
         .select(`
           *,
-          profiles:user_id (
+          profiles (
             first_name,
             last_name
           )
@@ -67,7 +91,7 @@ const Index = () => {
         return [];
       }
 
-      return data || [];
+      return (data || []) as ActivityLog[];
     },
     enabled: !!selectedCompanyId,
   });
@@ -77,7 +101,7 @@ const Index = () => {
   const weekEnd = endOfWeek(today);
   
   const dueThisWeek = outcomes?.filter(outcome => {
-    const dueDate = parseISO(outcome.next_due);
+    const dueDate = parseISO(outcome.nextDue);
     return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
   }) || [];
 
@@ -86,7 +110,7 @@ const Index = () => {
     completed: outcomes?.filter(p => p.status === 'completed').length || 0,
     inProgress: outcomes?.filter(p => p.status === 'in_progress').length || 0,
     overdue: outcomes?.filter(p => {
-      const dueDate = parseISO(p.next_due);
+      const dueDate = parseISO(p.nextDue);
       return isPast(dueDate) && p.status !== 'completed';
     }).length || 0,
   };
