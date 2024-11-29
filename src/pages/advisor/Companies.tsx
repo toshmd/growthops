@@ -119,7 +119,7 @@ const Companies = () => {
       const previousCompanies = queryClient.getQueryData(['companies']);
       
       queryClient.setQueryData(['companies'], (old: any) => ({
-        pages: old.pages.map((page: Company[]) =>
+        pages: old.pages.map((page: DbCompany[]) =>
           page.map((company) =>
             company.id === id ? { ...company, ...data } : company
           )
@@ -159,7 +159,7 @@ const Companies = () => {
       const previousCompanies = queryClient.getQueryData(['companies']);
       
       queryClient.setQueryData(['companies'], (old: any) => ({
-        pages: old.pages.map((page: Company[]) =>
+        pages: old.pages.map((page: DbCompany[]) =>
           page.filter((company) => company.id !== deletedId)
         ),
       }));
