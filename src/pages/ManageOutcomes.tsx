@@ -19,34 +19,34 @@ import CreateOutcome from "./CreateOutcome";
 
 // Mock data - in a real app, this would come from an API
 const mockOutcomes = {
-  "HR": [
-    { id: 1, title: "Employee Onboarding", interval: "weekly" },
-    { id: 2, title: "Performance Review", interval: "quarterly" },
+  "Revenue Growth": [
+    { id: 1, title: "Increase Sales Pipeline", interval: "weekly" },
+    { id: 2, title: "Customer Retention Rate", interval: "quarterly" },
   ],
-  "Finance": [
-    { id: 3, title: "Monthly Budget Review", interval: "monthly" },
-    { id: 4, title: "Annual Tax Filing", interval: "annual" },
+  "Operational Efficiency": [
+    { id: 3, title: "Process Optimization Review", interval: "monthly" },
+    { id: 4, title: "Resource Utilization Analysis", interval: "annual" },
   ],
 };
 
 const ManageOutcomes = () => {
   const { toast } = useToast();
-  const [newCategory, setNewCategory] = useState("");
+  const [newGoal, setNewGoal] = useState("");
   const [showCreateOutcome, setShowCreateOutcome] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedGoal, setSelectedGoal] = useState("");
 
-  const handleAddCategory = () => {
-    if (newCategory.trim()) {
+  const handleAddGoal = () => {
+    if (newGoal.trim()) {
       toast({
-        title: "Category Added",
-        description: `Category "${newCategory}" has been created.`,
+        title: "Goal Added",
+        description: `Goal "${newGoal}" has been created.`,
       });
-      setNewCategory("");
+      setNewGoal("");
     }
   };
 
-  const handleCreateOutcome = (category: string) => {
-    setSelectedCategory(category);
+  const handleCreateOutcome = (goal: string) => {
+    setSelectedGoal(goal);
     setShowCreateOutcome(true);
   };
 
@@ -56,26 +56,26 @@ const ManageOutcomes = () => {
       
       <div className="mb-8 flex gap-4 items-center">
         <Input
-          placeholder="Enter new category name"
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
+          placeholder="Enter new goal"
+          value={newGoal}
+          onChange={(e) => setNewGoal(e.target.value)}
           className="max-w-xs"
         />
-        <Button onClick={handleAddCategory}>Add Category</Button>
+        <Button onClick={handleAddGoal}>Add Goal</Button>
       </div>
 
       <Accordion type="single" collapsible className="w-full">
-        {Object.entries(mockOutcomes).map(([category, outcomes]) => (
-          <AccordionItem key={category} value={category}>
+        {Object.entries(mockOutcomes).map(([goal, outcomes]) => (
+          <AccordionItem key={goal} value={goal}>
             <AccordionTrigger className="text-lg">
               <div className="flex justify-between items-center w-full pr-4">
-                <span>{category}</span>
+                <span>{goal}</span>
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleCreateOutcome(category);
+                    handleCreateOutcome(goal);
                   }}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -110,7 +110,7 @@ const ManageOutcomes = () => {
       <Dialog open={showCreateOutcome} onOpenChange={setShowCreateOutcome}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Create Outcome in {selectedCategory}</DialogTitle>
+            <DialogTitle>Create Outcome in {selectedGoal}</DialogTitle>
           </DialogHeader>
           <CreateOutcome />
         </DialogContent>

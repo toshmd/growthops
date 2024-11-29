@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/components/ui/use-toast";
-import Categories from "@/components/Categories";
+import Goals from "@/components/Goals";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -44,7 +44,7 @@ const formSchema = z.object({
     required_error: "Please select an interval",
   }),
   owner: z.string().min(1, "Owner is required"),
-  categories: z.array(z.string()),
+  goals: z.array(z.string()),
   startDate: z.date({
     required_error: "Start date is required",
   }),
@@ -58,7 +58,7 @@ const CreateProcess = () => {
       title: "",
       description: "",
       owner: "",
-      categories: [],
+      goals: [],
       startDate: new Date(),
     },
   });
@@ -72,7 +72,7 @@ const CreateProcess = () => {
     form.reset();
   };
 
-  const existingCategories = ["HR", "Finance", "Operations", "IT", "Marketing"];
+  const existingGoals = ["Revenue Growth", "Customer Satisfaction", "Operational Efficiency", "Employee Development", "Innovation"];
 
   return (
     <div className="py-4">
@@ -195,15 +195,15 @@ const CreateProcess = () => {
 
           <FormField
             control={form.control}
-            name="categories"
+            name="goals"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Categories</FormLabel>
+                <FormLabel>Goals</FormLabel>
                 <FormControl>
-                  <Categories
-                    selectedCategories={field.value}
-                    onCategoriesChange={field.onChange}
-                    existingCategories={existingCategories}
+                  <Goals
+                    selectedGoals={field.value}
+                    onGoalsChange={field.onChange}
+                    existingGoals={existingGoals}
                   />
                 </FormControl>
                 <FormMessage />
