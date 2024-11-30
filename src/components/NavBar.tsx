@@ -82,7 +82,7 @@ const NavBar = () => {
             const { data: newPeopleData, error: createError } = await supabase
               .from('people')
               .insert([{ 
-                user_id: session.user.id,
+                user_id: session.user.id,  // Explicitly set the user_id to match auth.uid()
                 role: 'user',
                 is_advisor: false
               }])
