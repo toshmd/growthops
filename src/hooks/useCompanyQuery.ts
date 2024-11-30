@@ -36,16 +36,14 @@ export const useCompanyQuery = () => {
         throw new Error('No authenticated user');
       }
 
-      // Check if user is an advisor
+      // Direct query to check advisor status
       const { data: advisorData, error: advisorError } = await supabase
         .from('people')
         .select('is_advisor')
         .eq('user_id', user.id)
-        .eq('is_advisor', true)
         .single();
 
       if (advisorError) {
-        // If no advisor record found, show specific message
         if (advisorError.code === 'PGRST116') {
           toast({
             title: "Access Denied",

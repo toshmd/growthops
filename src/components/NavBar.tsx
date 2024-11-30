@@ -17,27 +17,29 @@ const NavBar = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
-          setError("No active session found. Please log in again.");
+          setError("No active session found");
           return;
         }
 
-        const { data: peopleData, error: peopleError } = await supabase
+        // Direct query to check advisor status
+        const { data, error: queryError } = await supabase
           .from('people')
           .select('is_advisor')
           .eq('user_id', session.user.id)
           .single();
 
-        if (peopleError) {
-          if (peopleError.code !== 'PGRST116') {
-            throw peopleError;
+        if (queryError) {
+          if (queryError.code === 'PGRST116') { // Record not found
+            setIsAdvisor(false);
+          } else {
+            throw queryError;
           }
-          setIsAdvisor(false);
         } else {
-          setIsAdvisor(!!peopleData.is_advisor);
+          setIsAdvisor(!!data?.is_advisor);
         }
 
       } catch (error: any) {
-        const errorMessage = `Error checking user role: ${error.message}`;
+        const errorMessage = `Error loading user role: ${error.message}`;
         console.error(errorMessage);
         setError(errorMessage);
         toast({
