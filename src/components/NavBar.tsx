@@ -31,10 +31,28 @@ const NavBar = () => {
           .single();
 
         if (profileError) {
-          console.error('Profile check error:', profileError);
-          setError("Profile setup incomplete. Please try logging out and back in.");
-          setIsLoading(false);
-          return;
+          // If profile doesn't exist, create it
+          if (profileError.code === 'PGRST116') {
+            const { error: createProfileError } = await supabase
+              .from('profiles')
+              .insert([{
+                id: session.user.id,
+                first_name: session.user.user_metadata?.first_name || '',
+                last_name: session.user.user_metadata?.last_name || ''
+              }]);
+
+            if (createProfileError) {
+              console.error('Profile creation error:', createProfileError);
+              setError("Failed to create user profile. Please try again.");
+              setIsLoading(false);
+              return;
+            }
+          } else {
+            console.error('Profile check error:', profileError);
+            setError("Profile setup incomplete. Please try logging out and back in.");
+            setIsLoading(false);
+            return;
+          }
         }
 
         // Then check if the user has a people record
@@ -44,38 +62,38 @@ const NavBar = () => {
           .eq('user_id', session.user.id)
           .single();
 
-        if (peopleError && peopleError.code !== 'PGRST116') {
-          console.error('People table error:', peopleError);
-          setError("Database error. Please try again later.");
-          setIsLoading(false);
-          return;
-        }
+        if (peopleError) {
+          // If people record doesn't exist, create one
+          if (peopleError.code === 'PGRST116') {
+            const { data: newPeopleData, error: createError } = await supabase
+              .from('people')
+              .insert([{ 
+                user_id: session.user.id,
+                role: 'user',
+                is_advisor: false
+              }])
+              .select('is_advisor')
+              .single();
 
-        // If no people record exists, create one with the current user's ID
-        if (!peopleData) {
-          const { data: newPeopleData, error: createError } = await supabase
-            .from('people')
-            .insert([{ 
-              user_id: session.user.id,
-              role: 'user',
-              is_advisor: false
-            }])
-            .select('is_advisor')
-            .single();
+            if (createError) {
+              console.error('Error creating people record:', createError);
+              toast({
+                title: "Error",
+                description: "Failed to set up your account. Please contact support.",
+                variant: "destructive",
+              });
+              setError("Error setting up your account. Please contact support.");
+              setIsLoading(false);
+              return;
+            }
 
-          if (createError) {
-            console.error('Error creating people record:', createError);
-            toast({
-              title: "Error",
-              description: "Failed to set up your account. Please contact support.",
-              variant: "destructive",
-            });
-            setError("Error setting up your account. Please contact support.");
+            setIsAdvisor(false);
+          } else {
+            console.error('People table error:', peopleError);
+            setError("Database error. Please try again later.");
             setIsLoading(false);
             return;
           }
-
-          setIsAdvisor(false);
         } else {
           setIsAdvisor(!!peopleData.is_advisor);
         }
