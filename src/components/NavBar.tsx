@@ -14,16 +14,21 @@ const NavBar = () => {
   useEffect(() => {
     const checkUserSetup = async () => {
       try {
+        console.log("Starting user setup check...");
         setError(null);
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!session?.user) {
+          console.error("No active session found");
           setError("No active session found. Please log in again.");
           setIsLoading(false);
           return;
         }
 
+        console.log("Session found for user:", session.user.id);
+
         // First check if user has a profile
+        console.log("Checking for existing profile...");
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
           .select('id')
@@ -31,8 +36,10 @@ const NavBar = () => {
           .single();
 
         if (profileError) {
+          console.log("Profile check result:", { profileError });
           // If profile doesn't exist, create it
           if (profileError.code === 'PGRST116') {
+            console.log("Profile not found, creating new profile...");
             const { error: createProfileError } = await supabase
               .from('profiles')
               .insert([{
@@ -43,28 +50,35 @@ const NavBar = () => {
 
             if (createProfileError) {
               console.error('Profile creation error:', createProfileError);
-              setError("Failed to create user profile. Please try again.");
+              setError(`Failed to create user profile: ${createProfileError.message}`);
               setIsLoading(false);
               return;
             }
+            console.log("Profile created successfully");
           } else {
             console.error('Profile check error:', profileError);
-            setError("Profile setup incomplete. Please try logging out and back in.");
+            setError(`Profile setup error: ${profileError.message}`);
             setIsLoading(false);
             return;
           }
+        } else {
+          console.log("Existing profile found");
         }
 
         // Then check if the user has a people record
+        console.log("Checking for existing people record...");
         const { data: peopleData, error: peopleError } = await supabase
           .from('people')
           .select('is_advisor')
           .eq('user_id', session.user.id)
           .single();
 
+        console.log("People check result:", { peopleData, peopleError });
+
         if (peopleError) {
           // If people record doesn't exist, create one
           if (peopleError.code === 'PGRST116') {
+            console.log("People record not found, creating new record...");
             const { data: newPeopleData, error: createError } = await supabase
               .from('people')
               .insert([{ 
@@ -75,32 +89,40 @@ const NavBar = () => {
               .select('is_advisor')
               .single();
 
+            console.log("People creation result:", { newPeopleData, createError });
+
             if (createError) {
               console.error('Error creating people record:', createError);
+              const errorMessage = `Failed to create people record: ${createError.message}`;
+              console.error(errorMessage);
               toast({
                 title: "Error",
-                description: "Failed to set up your account. Please contact support.",
+                description: errorMessage,
                 variant: "destructive",
               });
-              setError("Error setting up your account. Please contact support.");
+              setError(errorMessage);
               setIsLoading(false);
               return;
             }
 
             setIsAdvisor(false);
+            console.log("People record created successfully");
           } else {
-            console.error('People table error:', peopleError);
-            setError("Database error. Please try again later.");
+            const errorMessage = `Database error: ${peopleError.message}`;
+            console.error(errorMessage);
+            setError(errorMessage);
             setIsLoading(false);
             return;
           }
         } else {
+          console.log("Setting advisor status:", peopleData.is_advisor);
           setIsAdvisor(!!peopleData.is_advisor);
         }
 
       } catch (error: any) {
+        const errorMessage = `Unexpected error: ${error.message}`;
         console.error('Error in checkUserSetup:', error);
-        setError(`Unexpected error. Please try again later.`);
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
