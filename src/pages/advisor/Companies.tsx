@@ -32,9 +32,8 @@ const Companies = () => {
     refetch
   } = useCompanyQuery();
 
-  const companies = data?.pages.flatMap(page => page.companies) || [];
+  const companies = data?.pages.flatMap(page => page.companies) ?? [];
 
-  // Load pre-selected company
   useEffect(() => {
     if (selectedCompanyId) {
       const loadSelectedCompany = async () => {

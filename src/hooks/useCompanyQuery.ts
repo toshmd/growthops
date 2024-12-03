@@ -13,6 +13,7 @@ interface CompanyQueryResponse {
 export const useCompanyQuery = () => {
   return useInfiniteQuery<CompanyQueryResponse>({
     queryKey: ['companies'],
+    initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       const { data: { user } } = await supabase.auth.getUser();
       
