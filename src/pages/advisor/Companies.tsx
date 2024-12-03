@@ -38,6 +38,25 @@ const Companies = () => {
   useEffect(() => {
     if (selectedCompanyId) {
       const loadSelectedCompany = async () => {
+        // First verify advisor status using RPC
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: isAdvisor, error: advisorError } = await supabase
+          .rpc('is_user_advisor', {
+            user_id: user.id
+          });
+
+        if (advisorError || !isAdvisor) {
+          toast({
+            title: "Error",
+            description: "You don't have permission to view this company",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Then fetch company data
         const { data, error } = await supabase
           .from('companies')
           .select('*')
