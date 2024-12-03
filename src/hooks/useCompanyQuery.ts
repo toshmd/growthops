@@ -26,22 +26,20 @@ export const useCompanyQuery = () => {
         throw new Error('No authenticated user');
       }
 
-      // Direct query to check advisor status
-      const { data: advisorData, error: advisorError } = await supabase
-        .from('people')
-        .select('is_advisor')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Using RPC call to avoid RLS recursion
+      const { data: isAdvisor, error: advisorError } = await supabase
+        .rpc('is_user_advisor', {
+          user_id: user.id
+        });
 
       if (advisorError) {
         throw advisorError;
       }
 
-      if (!advisorData?.is_advisor) {
+      if (!isAdvisor) {
         throw new Error('User is not an advisor');
       }
       
-      // Fetch companies if user is verified as advisor
       const { data, error, count } = await supabase
         .from('companies')
         .select('*', { count: 'exact' })

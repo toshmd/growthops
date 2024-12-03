@@ -21,17 +21,17 @@ const NavBar = () => {
           return;
         }
 
-        const { data, error: queryError } = await supabase
-          .from('people')
-          .select('is_advisor')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Using RPC call to avoid RLS recursion
+        const { data, error: rpcError } = await supabase
+          .rpc('is_user_advisor', {
+            user_id: user.id
+          });
 
-        if (queryError) {
-          throw queryError;
+        if (rpcError) {
+          throw rpcError;
         }
 
-        setIsAdvisor(!!data?.is_advisor);
+        setIsAdvisor(!!data);
       } catch (error: any) {
         console.error('Error checking user role:', error);
         setError(error.message);
