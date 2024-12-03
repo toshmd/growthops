@@ -4,8 +4,14 @@ import { DbCompany } from "@/types/database";
 
 const COMPANIES_PER_PAGE = 10;
 
+interface CompanyQueryResponse {
+  companies: DbCompany[];
+  count: number;
+  nextPage: number | undefined;
+}
+
 export const useCompanyQuery = () => {
-  return useInfiniteQuery({
+  return useInfiniteQuery<CompanyQueryResponse>({
     queryKey: ['companies'],
     queryFn: async ({ pageParam = 0 }) => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -29,12 +35,12 @@ export const useCompanyQuery = () => {
       }
 
       // Then fetch companies in a separate query
-      const from = pageParam * COMPANIES_PER_PAGE;
+      const from = (pageParam as number) * COMPANIES_PER_PAGE;
       
       const { data: companies, error, count } = await supabase
         .from('companies')
         .select('*', { count: 'exact' })
-        .range(from, from + COMPANIES_PER_PAGE - 1)
+        .range(from, from + (COMPANIES_PER_PAGE - 1))
         .order('name');
 
       if (error) {
@@ -44,10 +50,9 @@ export const useCompanyQuery = () => {
       return {
         companies: companies as DbCompany[],
         count: count || 0,
-        nextPage: companies?.length === COMPANIES_PER_PAGE ? pageParam + 1 : undefined,
+        nextPage: companies?.length === COMPANIES_PER_PAGE ? (pageParam as number) + 1 : undefined,
       };
     },
     getNextPageParam: (lastPage) => lastPage.nextPage,
-    initialPageSize: COMPANIES_PER_PAGE,
   });
 };
