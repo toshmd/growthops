@@ -14,37 +14,30 @@ const NavBar = () => {
   useEffect(() => {
     const checkUserRole = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { user } } = await supabase.auth.getUser();
         
-        if (!session?.user) {
-          setError("No active session found");
+        if (!user) {
+          setError("No authenticated user found");
           return;
         }
 
-        // Direct query to check advisor status
         const { data, error: queryError } = await supabase
           .from('people')
           .select('is_advisor')
-          .eq('user_id', session.user.id)
-          .single();
+          .eq('user_id', user.id)
+          .maybeSingle();
 
         if (queryError) {
-          if (queryError.code === 'PGRST116') { // Record not found
-            setIsAdvisor(false);
-          } else {
-            throw queryError;
-          }
-        } else {
-          setIsAdvisor(!!data?.is_advisor);
+          throw queryError;
         }
 
+        setIsAdvisor(!!data?.is_advisor);
       } catch (error: any) {
-        const errorMessage = `Error loading user role: ${error.message}`;
-        console.error(errorMessage);
-        setError(errorMessage);
+        console.error('Error checking user role:', error);
+        setError(error.message);
         toast({
           title: "Error",
-          description: errorMessage,
+          description: "Failed to load user role",
           variant: "destructive",
         });
       } finally {

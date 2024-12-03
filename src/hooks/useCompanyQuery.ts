@@ -20,18 +20,8 @@ export const useCompanyQuery = () => {
       const from = Number(pageParam) * COMPANIES_PER_PAGE;
       const to = from + COMPANIES_PER_PAGE - 1;
 
-      // First get the current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (userError) {
-        toast({
-          title: "Authentication Error",
-          description: "Please try logging in again",
-          variant: "destructive",
-        });
-        throw new Error('Authentication failed');
-      }
-
       if (!user) {
         throw new Error('No authenticated user');
       }
@@ -41,26 +31,13 @@ export const useCompanyQuery = () => {
         .from('people')
         .select('is_advisor')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (advisorError) {
-        if (advisorError.code === 'PGRST116') {
-          toast({
-            title: "Access Denied",
-            description: "You don't have advisor privileges",
-            variant: "destructive",
-          });
-          throw new Error('User is not an advisor');
-        }
         throw advisorError;
       }
 
       if (!advisorData?.is_advisor) {
-        toast({
-          title: "Access Denied",
-          description: "You don't have advisor privileges",
-          variant: "destructive",
-        });
         throw new Error('User is not an advisor');
       }
       
