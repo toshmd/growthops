@@ -8,12 +8,19 @@ type Profile = {
   last_name: string | null;
 };
 
+type ActivityLogDetails = {
+  outcome_title?: string;
+  previous_owner?: string;
+  new_owner?: string;
+};
+
 export type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
   created_by_profile: Profile;
 };
 
 export type ActivityLogWithProfile = Database['public']['Tables']['activity_logs']['Row'] & {
   user: Profile;
+  details: ActivityLogDetails;
 };
 
 export const useDashboardData = (selectedCompanyId: string | null) => {
