@@ -32,15 +32,13 @@ const Administrators = () => {
       if (!session) throw new Error('Not authenticated');
 
       // First check if the user is an advisor
-      const { data: userData, error: userError } = await supabase
-        .from('people')
-        .select('is_advisor')
-        .eq('user_id', session.user.id)
-        .single();
+      const { data: isAdvisorData, error: advisorError } = await supabase
+        .rpc('is_user_advisor', {
+          user_id: session.user.id
+        });
 
-      if (userError) throw userError;
-      
-      if (!userData?.is_advisor) {
+      if (advisorError) throw advisorError;
+      if (!isAdvisorData) {
         throw new Error('not_advisor');
       }
 
@@ -57,13 +55,25 @@ const Administrators = () => {
           profiles:user_id (
             first_name,
             last_name,
-            email
+            email:id
           )
         `)
         .eq('is_advisor', true);
       
       if (error) throw error;
-      return data || [];
+
+      // Transform the data to match the Administrator type
+      return (data || []).map(admin => ({
+        id: admin.id,
+        profiles: {
+          first_name: admin.profiles?.first_name,
+          last_name: admin.profiles?.last_name,
+          email: admin.profiles?.email
+        },
+        is_advisor: admin.is_advisor,
+        role: admin.role,
+        company: admin.company ? { name: admin.company.name } : undefined
+      }));
     },
   });
 
@@ -88,26 +98,26 @@ const Administrators = () => {
   }
 
   const handleDelete = async () => {
-    if (deleteAdminId) {
-      const { error } = await supabase
-        .from('people')
-        .delete()
-        .eq('id', deleteAdminId);
+    if (!deleteAdminId) return;
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete administrator",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Success",
-          description: "Administrator removed successfully",
-        });
-      }
-      setDeleteAdminId(null);
+    const { error: deleteError } = await supabase
+      .from('people')
+      .delete()
+      .eq('id', deleteAdminId);
+
+    if (deleteError) {
+      toast({
+        title: "Error",
+        description: "Failed to delete administrator",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Administrator removed successfully",
+      });
     }
+    setDeleteAdminId(null);
   };
 
   return (
