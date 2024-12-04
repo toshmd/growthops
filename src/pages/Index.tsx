@@ -9,71 +9,67 @@ import DueThisWeek from "@/components/dashboard/DueThisWeek";
 import StatusOverview from "@/components/dashboard/StatusOverview";
 import TeamActivity from "@/components/dashboard/TeamActivity";
 import { useToast } from "@/components/ui/use-toast";
-import { Outcome, SupabaseOutcome, Interval } from "@/types/outcome";
+import { Database } from "@/integrations/supabase/types";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-interface ActivityLog {
-  id: string;
-  action: string;
-  entity_id: string;
-  details: any;
-  created_at: string;
+type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
   profiles: {
-    first_name: string;
-    last_name: string;
+    first_name: string | null;
+    last_name: string | null;
   } | null;
-}
+};
 
-const transformOutcome = (outcome: SupabaseOutcome): Outcome => ({
-  id: parseInt(outcome.id),
-  title: outcome.title,
-  description: outcome.description,
-  interval: outcome.interval as Interval, // Type assertion since we know the values match our Interval type
-  nextDue: outcome.next_due,
-  status: outcome.status,
-  startDate: new Date(outcome.start_date),
-  teamId: outcome.team_id,
-  reportingDates: []
-});
+type ActivityLogWithProfile = Database['public']['Tables']['activity_logs']['Row'] & {
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+};
 
 const Index = () => {
   const { selectedCompanyId } = useCompany();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch outcomes
-  const { data: outcomes, isLoading: isLoadingOutcomes } = useQuery({
+  // Fetch outcomes with proper error handling and typing
+  const { data: outcomes, isLoading: isLoadingOutcomes, error: outcomesError } = useQuery({
     queryKey: ['outcomes', selectedCompanyId],
     queryFn: async () => {
       if (!selectedCompanyId) return [];
+      
       const { data, error } = await supabase
         .from('outcomes')
-        .select('*')
+        .select(`
+          *,
+          profiles:created_by (
+            first_name,
+            last_name
+          )
+        `)
         .eq('company_id', selectedCompanyId);
       
       if (error) {
-        toast({
-          title: "Error loading outcomes",
-          description: error.message,
-          variant: "destructive",
-        });
-        return [];
+        console.error('Error fetching outcomes:', error);
+        throw error;
       }
       
-      return (data || []).map(transformOutcome);
+      return data as OutcomeWithProfile[];
     },
     enabled: !!selectedCompanyId,
   });
 
-  // Fetch activity logs
-  const { data: activityLogs, isLoading: isLoadingActivity } = useQuery({
+  // Fetch activity logs with proper error handling and typing
+  const { data: activityLogs, isLoading: isLoadingActivity, error: activityError } = useQuery({
     queryKey: ['activity_logs', selectedCompanyId],
     queryFn: async () => {
       if (!selectedCompanyId) return [];
+      
       const { data, error } = await supabase
         .from('activity_logs')
         .select(`
           *,
-          profiles (
+          profiles:user_id (
             first_name,
             last_name
           )
@@ -83,15 +79,11 @@ const Index = () => {
         .limit(10);
 
       if (error) {
-        toast({
-          title: "Error loading activity",
-          description: error.message,
-          variant: "destructive",
-        });
-        return [];
+        console.error('Error fetching activity:', error);
+        throw error;
       }
 
-      return (data || []) as ActivityLog[];
+      return data as ActivityLogWithProfile[];
     },
     enabled: !!selectedCompanyId,
   });
@@ -101,7 +93,7 @@ const Index = () => {
   const weekEnd = endOfWeek(today);
   
   const dueThisWeek = outcomes?.filter(outcome => {
-    const dueDate = parseISO(outcome.nextDue);
+    const dueDate = parseISO(outcome.next_due);
     return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
   }) || [];
 
@@ -110,7 +102,7 @@ const Index = () => {
     completed: outcomes?.filter(p => p.status === 'completed').length || 0,
     inProgress: outcomes?.filter(p => p.status === 'in_progress').length || 0,
     overdue: outcomes?.filter(p => {
-      const dueDate = parseISO(p.nextDue);
+      const dueDate = parseISO(p.next_due);
       return isPast(dueDate) && p.status !== 'completed';
     }).length || 0,
   };
@@ -162,6 +154,19 @@ const Index = () => {
       activityChannel.unsubscribe();
     };
   }, [selectedCompanyId, queryClient]);
+
+  if (outcomesError || activityError) {
+    return (
+      <div className="p-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {outcomesError ? 'Error loading outcomes' : 'Error loading activity logs'}
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
