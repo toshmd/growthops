@@ -34,18 +34,38 @@ CREATE TRIGGER update_profiles_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Update or create is_user_advisor function with caching to prevent recursion
+-- Create a materialized view to cache advisor status
+CREATE MATERIALIZED VIEW IF NOT EXISTS cached_advisor_status AS
+SELECT user_id, is_advisor
+FROM people
+WHERE is_advisor = true;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cached_advisor_status ON cached_advisor_status(user_id);
+
+-- Create function to refresh the materialized view
+CREATE OR REPLACE FUNCTION refresh_advisor_cache()
+RETURNS TRIGGER AS $$
+BEGIN
+    REFRESH MATERIALIZED VIEW CONCURRENTLY cached_advisor_status;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger to refresh the cache when people table changes
+DROP TRIGGER IF EXISTS refresh_advisor_cache_trigger ON people;
+CREATE TRIGGER refresh_advisor_cache_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON people
+    FOR EACH STATEMENT
+    EXECUTE FUNCTION refresh_advisor_cache();
+
+-- Update is_user_advisor function to use the cached view
 CREATE OR REPLACE FUNCTION is_user_advisor(user_id UUID)
 RETURNS BOOLEAN AS $$
-DECLARE
-    is_advisor_result BOOLEAN;
 BEGIN
-    SELECT is_advisor INTO is_advisor_result
-    FROM people
-    WHERE user_id = $1
-    LIMIT 1;
-    
-    RETURN COALESCE(is_advisor_result, false);
+    RETURN EXISTS (
+        SELECT 1 FROM cached_advisor_status
+        WHERE cached_advisor_status.user_id = $1
+    );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -56,33 +76,30 @@ ALTER TABLE people ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies
 DROP POLICY IF EXISTS profiles_select ON profiles;
 DROP POLICY IF EXISTS profiles_update ON profiles;
-DROP POLICY IF EXISTS people_select ON people;
-DROP POLICY IF EXISTS people_insert ON people;
-DROP POLICY IF EXISTS people_update ON people;
-DROP POLICY IF EXISTS people_delete ON people;
+DROP POLICY IF EXISTS people_select ON profiles;
+DROP POLICY IF EXISTS people_insert ON profiles;
+DROP POLICY IF EXISTS people_update ON profiles;
+DROP POLICY IF EXISTS people_delete ON profiles;
 
 -- Create new RLS policies for profiles
 CREATE POLICY profiles_select ON profiles FOR SELECT TO authenticated USING (true);
 CREATE POLICY profiles_update ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 
--- Create new RLS policies for people with fixed recursion issue
+-- Create new RLS policies for people with optimized recursion prevention
 CREATE POLICY people_select ON people FOR SELECT TO authenticated 
 USING (
     user_id = auth.uid() OR 
     EXISTS (
-        SELECT 1 FROM people advisor 
-        WHERE advisor.user_id = auth.uid() 
-        AND advisor.is_advisor = true
-        AND advisor.id != people.id
+        SELECT 1 FROM cached_advisor_status
+        WHERE cached_advisor_status.user_id = auth.uid()
     )
 );
 
 CREATE POLICY people_insert ON people FOR INSERT TO authenticated 
 WITH CHECK (
     EXISTS (
-        SELECT 1 FROM people advisor 
-        WHERE advisor.user_id = auth.uid() 
-        AND advisor.is_advisor = true
+        SELECT 1 FROM cached_advisor_status
+        WHERE cached_advisor_status.user_id = auth.uid()
     )
 );
 
@@ -90,20 +107,16 @@ CREATE POLICY people_update ON people FOR UPDATE TO authenticated
 USING (
     user_id = auth.uid() OR 
     EXISTS (
-        SELECT 1 FROM people advisor 
-        WHERE advisor.user_id = auth.uid() 
-        AND advisor.is_advisor = true
-        AND advisor.id != people.id
+        SELECT 1 FROM cached_advisor_status
+        WHERE cached_advisor_status.user_id = auth.uid()
     )
 );
 
 CREATE POLICY people_delete ON people FOR DELETE TO authenticated 
 USING (
     EXISTS (
-        SELECT 1 FROM people advisor 
-        WHERE advisor.user_id = auth.uid() 
-        AND advisor.is_advisor = true
-        AND advisor.id != people.id
+        SELECT 1 FROM cached_advisor_status
+        WHERE cached_advisor_status.user_id = auth.uid()
     )
 );
 
