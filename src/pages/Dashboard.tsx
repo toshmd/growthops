@@ -7,27 +7,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { Interval } from "@/utils/dateCalculations";
-import ProcessCard from "@/components/dashboard/ProcessCard";
-import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Database } from "@/integrations/supabase/types";
+import ProcessCard from "@/components/dashboard/ProcessCard";
 import { useDashboardData } from "@/hooks/useDashboardData";
-
-type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
-};
 
 const Dashboard = () => {
   const [intervalFilter, setIntervalFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
-  const { toast } = useToast();
 
   const { outcomes = [], isLoadingOutcomes, outcomesError } = useDashboardData(null);
 
@@ -48,8 +35,8 @@ const Dashboard = () => {
 
   const filteredOutcomes = outcomes.filter(outcome => {
     if (ownerFilter === "all") return true;
-    const ownerName = outcome.profiles ? 
-      `${outcome.profiles.first_name || ''} ${outcome.profiles.last_name || ''}`.trim().toLowerCase() : 
+    const ownerName = outcome.created_by_profile ? 
+      `${outcome.created_by_profile.first_name || ''} ${outcome.created_by_profile.last_name || ''}`.trim().toLowerCase() : 
       '';
     return ownerName.includes(ownerFilter.toLowerCase());
   });
@@ -84,8 +71,8 @@ const Dashboard = () => {
               <SelectContent>
                 <SelectItem value="all">All Owners</SelectItem>
                 {[...new Set(outcomes.map(o => 
-                  o.profiles ? 
-                    `${o.profiles.first_name || ''} ${o.profiles.last_name || ''}`.trim() : 
+                  o.created_by_profile ? 
+                    `${o.created_by_profile.first_name || ''} ${o.created_by_profile.last_name || ''}`.trim() : 
                     ''
                 ))]
                   .filter(Boolean)
