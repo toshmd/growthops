@@ -50,7 +50,7 @@ const Administrators = () => {
           user_id,
           is_advisor,
           role,
-          company:company_id (
+          company:companies!inner (
             id,
             name
           ),
@@ -59,8 +59,7 @@ const Administrators = () => {
             last_name,
             id
           )
-        `)
-        .eq('is_advisor', true);
+        `);
       
       if (error) throw error;
       if (!data) return [];
@@ -75,7 +74,10 @@ const Administrators = () => {
         },
         is_advisor: admin.is_advisor,
         role: admin.role,
-        company: admin.company ? { name: admin.company.name || '' } : undefined
+        company: admin.company ? { 
+          id: admin.company.id,
+          name: admin.company.name 
+        } : undefined
       }));
     },
   });
@@ -99,29 +101,6 @@ const Administrators = () => {
       </div>
     );
   }
-
-  const handleDelete = async () => {
-    if (!deleteAdminId) return;
-
-    const { error: deleteError } = await supabase
-      .from('people')
-      .delete()
-      .eq('id', deleteAdminId);
-
-    if (deleteError) {
-      toast({
-        title: "Error",
-        description: "Failed to delete administrator",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Administrator removed successfully",
-      });
-    }
-    setDeleteAdminId(null);
-  };
 
   return (
     <div className="space-y-6">
@@ -175,7 +154,7 @@ const Administrators = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Remove</AlertDialogAction>
+            <AlertDialogAction onClick={() => handleDelete()}>Remove</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
