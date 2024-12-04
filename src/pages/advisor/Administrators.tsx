@@ -74,7 +74,7 @@ const Administrators = () => {
         },
         is_advisor: admin.is_advisor,
         role: admin.role,
-        company: admin.company ? { name: admin.company.name } : undefined
+        company: admin.company ? { name: admin.company.name || '' } : undefined
       }));
     },
   });
