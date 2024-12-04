@@ -9,11 +9,11 @@ type Profile = {
 };
 
 export type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
-  profiles: Profile;
+  created_by_profile: Profile;
 };
 
 export type ActivityLogWithProfile = Database['public']['Tables']['activity_logs']['Row'] & {
-  profiles: Profile;
+  user: Profile;
 };
 
 export const useDashboardData = (selectedCompanyId: string | null) => {
