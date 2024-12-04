@@ -43,66 +43,53 @@ const Administrators = () => {
         throw new Error('not_advisor');
       }
 
-      const { data, error } = await supabase
+      const { data, error: peopleError } = await supabase
         .from('people')
         .select(`
           id,
           user_id,
           is_advisor,
           role,
-          company:companies!inner (
+          company:companies(
             id,
             name
           ),
-          profiles!inner (
+          profiles!inner(
             first_name,
             last_name,
             id
           )
         `);
       
-      if (error) throw error;
-      if (!data) return [];
-
-      // Transform the data to match the Administrator type
-      return data.map(admin => ({
-        id: admin.id,
-        profiles: {
-          first_name: admin.profiles?.first_name || '',
-          last_name: admin.profiles?.last_name || '',
-          email: admin.profiles?.id // Using id as email since that's what we get from auth
-        },
-        is_advisor: admin.is_advisor,
-        role: admin.role,
-        company: admin.company ? { 
-          id: admin.company.id,
-          name: admin.company.name 
-        } : undefined
-      }));
+      if (peopleError) throw peopleError;
+      return data || [];
     },
   });
 
   const handleDelete = async () => {
     if (!deleteAdminId) return;
 
-    const { error: deleteError } = await supabase
-      .from('people')
-      .delete()
-      .eq('id', deleteAdminId);
+    try {
+      const { error: deleteError } = await supabase
+        .from('people')
+        .delete()
+        .eq('id', deleteAdminId);
 
-    if (deleteError) {
-      toast({
-        title: "Error",
-        description: "Failed to delete administrator",
-        variant: "destructive",
-      });
-    } else {
+      if (deleteError) throw deleteError;
+
       toast({
         title: "Success",
         description: "Administrator removed successfully",
       });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete administrator",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteAdminId(null);
     }
-    setDeleteAdminId(null);
   };
 
   if (error) {
@@ -119,7 +106,7 @@ const Administrators = () => {
       <div className="p-4">
         <div className="bg-destructive/15 text-destructive p-4 rounded-lg">
           <h3 className="font-semibold mb-2">Error loading administrators</h3>
-          <p>{error.message}</p>
+          <p>{error instanceof Error ? error.message : 'An unknown error occurred'}</p>
         </div>
       </div>
     );
@@ -177,7 +164,7 @@ const Administrators = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => handleDelete()}>Remove</AlertDialogAction>
+            <AlertDialogAction onClick={handleDelete}>Remove</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
