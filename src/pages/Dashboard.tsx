@@ -12,47 +12,46 @@ import { supabase } from "@/integrations/supabase/client";
 import { Interval } from "@/utils/dateCalculations";
 import ProcessCard from "@/components/dashboard/ProcessCard";
 import { useToast } from "@/components/ui/use-toast";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Dashboard = () => {
   const [intervalFilter, setIntervalFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  const { data: outcomes = [], isLoading } = useQuery({
+  const { data: outcomes = [], isLoading, error } = useQuery({
     queryKey: ['dashboard-outcomes'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      const query = supabase
+      const { data, error } = await supabase
         .from('outcomes')
         .select(`
-          *,
-          profiles!outcomes_created_by_fkey (
+          id,
+          title,
+          interval,
+          status,
+          start_date,
+          updated_at,
+          profiles:created_by (
             first_name,
             last_name
           )
         `);
 
-      if (intervalFilter !== "all") {
-        query.eq('interval', intervalFilter);
-      }
-
-      const { data, error } = await query;
-
       if (error) {
-        toast({
-          title: "Error loading outcomes",
-          description: error.message,
-          variant: "destructive",
-        });
-        return [];
+        console.error('Error fetching outcomes:', error);
+        throw error;
       }
 
       return data?.map(outcome => ({
         id: outcome.id,
         title: outcome.title,
-        owner: `${outcome.profiles?.first_name || ''} ${outcome.profiles?.last_name || ''}`.trim(),
+        owner: outcome.profiles ? 
+          `${outcome.profiles.first_name || ''} ${outcome.profiles.last_name || ''}`.trim() : 
+          'Unknown',
         interval: outcome.interval as Interval,
         status: outcome.status,
         startDate: new Date(outcome.start_date),
@@ -60,13 +59,30 @@ const Dashboard = () => {
         reportingDates: []
       })) || [];
     },
-    enabled: true,
+    retry: 1,
+    meta: {
+      errorMessage: "Failed to load outcomes"
+    }
   });
 
   const filteredOutcomes = outcomes.filter(outcome => {
     if (ownerFilter === "all") return true;
     return outcome.owner.toLowerCase().includes(ownerFilter.toLowerCase());
   });
+
+  if (error) {
+    return (
+      <div className="container py-12">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            Failed to load the dashboard. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
