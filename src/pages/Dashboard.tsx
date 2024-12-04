@@ -14,6 +14,14 @@ import ProcessCard from "@/components/dashboard/ProcessCard";
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Database } from "@/integrations/supabase/types";
+
+type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+  } | null;
+};
 
 const Dashboard = () => {
   const [intervalFilter, setIntervalFilter] = useState<string>("all");
@@ -39,7 +47,7 @@ const Dashboard = () => {
             first_name,
             last_name
           )
-        `);
+        `) as { data: OutcomeWithProfile[] | null; error: any };
 
       if (error) {
         console.error('Error fetching outcomes:', error);
