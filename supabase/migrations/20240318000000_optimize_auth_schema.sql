@@ -34,15 +34,18 @@ CREATE TRIGGER update_profiles_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Update or create is_user_advisor function
+-- Update or create is_user_advisor function with caching to prevent recursion
 CREATE OR REPLACE FUNCTION is_user_advisor(user_id UUID)
 RETURNS BOOLEAN AS $$
+DECLARE
+    is_advisor_result BOOLEAN;
 BEGIN
-    RETURN EXISTS (
-        SELECT 1 FROM people 
-        WHERE user_id = $1 
-        AND is_advisor = true
-    );
+    SELECT is_advisor INTO is_advisor_result
+    FROM people
+    WHERE user_id = $1
+    LIMIT 1;
+    
+    RETURN COALESCE(is_advisor_result, false);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -62,23 +65,24 @@ DROP POLICY IF EXISTS people_delete ON people;
 CREATE POLICY profiles_select ON profiles FOR SELECT TO authenticated USING (true);
 CREATE POLICY profiles_update ON profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 
--- Create new RLS policies for people
+-- Create new RLS policies for people with fixed recursion issue
 CREATE POLICY people_select ON people FOR SELECT TO authenticated 
 USING (
     user_id = auth.uid() OR 
     EXISTS (
-        SELECT 1 FROM people p
-        WHERE p.user_id = auth.uid()
-        AND p.is_advisor = true
+        SELECT 1 FROM people advisor 
+        WHERE advisor.user_id = auth.uid() 
+        AND advisor.is_advisor = true
+        AND advisor.id != people.id
     )
 );
 
 CREATE POLICY people_insert ON people FOR INSERT TO authenticated 
 WITH CHECK (
     EXISTS (
-        SELECT 1 FROM people p
-        WHERE p.user_id = auth.uid()
-        AND p.is_advisor = true
+        SELECT 1 FROM people advisor 
+        WHERE advisor.user_id = auth.uid() 
+        AND advisor.is_advisor = true
     )
 );
 
@@ -86,18 +90,20 @@ CREATE POLICY people_update ON people FOR UPDATE TO authenticated
 USING (
     user_id = auth.uid() OR 
     EXISTS (
-        SELECT 1 FROM people p
-        WHERE p.user_id = auth.uid()
-        AND p.is_advisor = true
+        SELECT 1 FROM people advisor 
+        WHERE advisor.user_id = auth.uid() 
+        AND advisor.is_advisor = true
+        AND advisor.id != people.id
     )
 );
 
 CREATE POLICY people_delete ON people FOR DELETE TO authenticated 
 USING (
     EXISTS (
-        SELECT 1 FROM people p
-        WHERE p.user_id = auth.uid()
-        AND p.is_advisor = true
+        SELECT 1 FROM people advisor 
+        WHERE advisor.user_id = auth.uid() 
+        AND advisor.is_advisor = true
+        AND advisor.id != people.id
     )
 );
 
