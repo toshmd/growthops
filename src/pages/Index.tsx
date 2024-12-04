@@ -13,18 +13,17 @@ import { Database } from "@/integrations/supabase/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 
+type Profile = {
+  first_name: string | null;
+  last_name: string | null;
+};
+
 type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
+  profiles: Profile | null;
 };
 
 type ActivityLogWithProfile = Database['public']['Tables']['activity_logs']['Row'] & {
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-  } | null;
+  profiles: Profile | null;
 };
 
 const Index = () => {
