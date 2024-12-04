@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Database } from "@/integrations/supabase/types";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
   profiles: {
@@ -28,69 +29,30 @@ const Dashboard = () => {
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  const { data: outcomes = [], isLoading, error } = useQuery({
-    queryKey: ['dashboard-outcomes'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No authenticated user");
+  const { outcomes = [], isLoadingOutcomes, outcomesError } = useDashboardData(null);
 
-      const { data, error } = await supabase
-        .from('outcomes')
-        .select(`
-          id,
-          title,
-          interval,
-          status,
-          start_date,
-          updated_at,
-          profiles:created_by (
-            first_name,
-            last_name
-          )
-        `) as { data: OutcomeWithProfile[] | null; error: any };
-
-      if (error) {
-        console.error('Error fetching outcomes:', error);
-        throw error;
-      }
-
-      return data?.map(outcome => ({
-        id: outcome.id,
-        title: outcome.title,
-        owner: outcome.profiles ? 
-          `${outcome.profiles.first_name || ''} ${outcome.profiles.last_name || ''}`.trim() : 
-          'Unknown',
-        interval: outcome.interval as Interval,
-        status: outcome.status,
-        startDate: new Date(outcome.start_date),
-        lastUpdated: outcome.updated_at,
-        reportingDates: []
-      })) || [];
-    },
-    retry: 1,
-    meta: {
-      errorMessage: "Failed to load outcomes"
-    }
-  });
-
-  const filteredOutcomes = outcomes.filter(outcome => {
-    if (ownerFilter === "all") return true;
-    return outcome.owner.toLowerCase().includes(ownerFilter.toLowerCase());
-  });
-
-  if (error) {
+  if (outcomesError) {
+    console.error('Dashboard error:', outcomesError);
     return (
       <div className="container py-12">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Failed to load the dashboard. Please try again later.
+            {outcomesError.message || "Failed to load the dashboard. Please try again later."}
           </AlertDescription>
         </Alert>
       </div>
     );
   }
+
+  const filteredOutcomes = outcomes.filter(outcome => {
+    if (ownerFilter === "all") return true;
+    const ownerName = outcome.profiles ? 
+      `${outcome.profiles.first_name || ''} ${outcome.profiles.last_name || ''}`.trim().toLowerCase() : 
+      '';
+    return ownerName.includes(ownerFilter.toLowerCase());
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -121,7 +83,11 @@ const Dashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Owners</SelectItem>
-                {[...new Set(outcomes.map(o => o.owner))]
+                {[...new Set(outcomes.map(o => 
+                  o.profiles ? 
+                    `${o.profiles.first_name || ''} ${o.profiles.last_name || ''}`.trim() : 
+                    ''
+                ))]
                   .filter(Boolean)
                   .map(owner => (
                     <SelectItem key={owner} value={owner.toLowerCase()}>
@@ -134,7 +100,7 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 gap-6">
-          {isLoading ? (
+          {isLoadingOutcomes ? (
             <Card className="p-6">
               <div className="animate-pulse space-y-4">
                 <div className="h-4 bg-gray-200 rounded w-1/4"></div>

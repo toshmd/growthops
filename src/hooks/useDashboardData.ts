@@ -60,18 +60,11 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
 
       if (error) {
         console.error('Error fetching outcomes:', error);
-        toast({
-          title: "Error loading outcomes",
-          description: error.message,
-          variant: "destructive",
-        });
         throw error;
       }
 
       return data as OutcomeWithProfile[];
     },
-    enabled: true,
-    retry: 1,
     meta: {
       errorMessage: "Failed to load outcomes"
     }
@@ -97,17 +90,18 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
 
       if (error) {
         console.error('Error fetching activity:', error);
-        toast({
-          title: "Error loading activity",
-          description: error.message,
-          variant: "destructive",
-        });
         throw error;
       }
 
-      return data as ActivityLogWithProfile[];
+      return (data || []).map(log => ({
+        ...log,
+        details: log.details as ActivityLogDetails
+      })) as ActivityLogWithProfile[];
     },
-    enabled: !!selectedCompanyId
+    enabled: !!selectedCompanyId,
+    meta: {
+      errorMessage: "Failed to load activity logs"
+    }
   });
 
   return {
