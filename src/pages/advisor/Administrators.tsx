@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
@@ -23,6 +23,36 @@ const Administrators = () => {
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
   const [deleteAdminId, setDeleteAdminId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Add mutation to become an advisor
+  const becomeAdvisorMutation = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('people')
+        .update({ is_advisor: true })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['administrators'] });
+      toast({
+        title: "Success",
+        description: "You are now an advisor",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const { data: administrators = [], isLoading, error } = useQuery({
     queryKey: ['administrators'],
@@ -34,8 +64,11 @@ const Administrators = () => {
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
         .single();
 
-      if (userError || !userData?.is_advisor) {
-        throw new Error('Unauthorized: User is not an advisor');
+      if (userError) throw userError;
+      
+      // If user is not an advisor, throw a specific error
+      if (!userData?.is_advisor) {
+        throw new Error('not_advisor');
       }
 
       const { data, error } = await supabase
@@ -62,11 +95,37 @@ const Administrators = () => {
   });
 
   if (error) {
+    // Special handling for non-advisor users
+    if (error.message === 'not_advisor') {
+      return (
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">Administrators</h1>
+          <Card>
+            <CardHeader>
+              <CardTitle>Become an Advisor</CardTitle>
+              <CardDescription>
+                You need advisor privileges to manage administrators.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => becomeAdvisorMutation.mutate()}
+                disabled={becomeAdvisorMutation.isPending}
+              >
+                {becomeAdvisorMutation.isPending ? "Processing..." : "Become an Advisor"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Handle other errors
     return (
       <div className="p-4">
         <div className="bg-destructive/15 text-destructive p-4 rounded-lg">
           <h3 className="font-semibold mb-2">Error loading administrators</h3>
-          <p>{(error as Error).message}</p>
+          <p>{error.message}</p>
         </div>
       </div>
     );
