@@ -82,6 +82,29 @@ const Administrators = () => {
     },
   });
 
+  const handleDelete = async () => {
+    if (!deleteAdminId) return;
+
+    const { error: deleteError } = await supabase
+      .from('people')
+      .delete()
+      .eq('id', deleteAdminId);
+
+    if (deleteError) {
+      toast({
+        title: "Error",
+        description: "Failed to delete administrator",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Administrator removed successfully",
+      });
+    }
+    setDeleteAdminId(null);
+  };
+
   if (error) {
     if (error.message === 'not_advisor') {
       return (
