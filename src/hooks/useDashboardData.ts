@@ -41,24 +41,17 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         return [];
       }
 
-      // Then fetch outcomes for that company
+      // Fetch outcomes with a simplified query
       const { data, error } = await supabase
         .from('outcomes')
         .select(`
-          id,
-          title,
-          interval,
-          status,
-          start_date,
-          next_due,
-          updated_at,
-          created_by,
-          profiles!outcomes_created_by_fkey (
+          *,
+          created_by_profile:profiles!outcomes_created_by_fkey (
             first_name,
             last_name
           )
         `)
-        .eq('company_id', companyId) as { data: OutcomeWithProfile[] | null; error: any };
+        .eq('company_id', companyId);
 
       if (error) {
         console.error('Error fetching outcomes:', error);
@@ -72,8 +65,8 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
 
       return data?.map(outcome => ({
         ...outcome,
-        owner: outcome.profiles ? 
-          `${outcome.profiles.first_name || ''} ${outcome.profiles.last_name || ''}`.trim() : 
+        owner: outcome.created_by_profile ? 
+          `${outcome.created_by_profile.first_name || ''} ${outcome.created_by_profile.last_name || ''}`.trim() : 
           'Unknown',
         interval: outcome.interval,
         status: outcome.status,
@@ -98,7 +91,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         .from('activity_logs')
         .select(`
           *,
-          profiles:user_id (
+          user:profiles!activity_logs_user_id_fkey (
             first_name,
             last_name
           )
@@ -119,7 +112,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
 
       return (data || []).map(log => ({
         ...log,
-        profiles: log.profiles || { first_name: null, last_name: null }
+        profiles: log.user || { first_name: null, last_name: null }
       })) as ActivityLogWithProfile[];
     },
     enabled: !!selectedCompanyId
