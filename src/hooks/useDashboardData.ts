@@ -25,7 +25,6 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // First, get the user's company_id if not provided
       let companyId = selectedCompanyId;
       if (!companyId) {
         const { data: peopleData } = await supabase
@@ -41,7 +40,6 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         return [];
       }
 
-      // Fetch outcomes with a simplified query
       const { data, error } = await supabase
         .from('outcomes')
         .select(`
@@ -63,17 +61,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         throw error;
       }
 
-      return data?.map(outcome => ({
-        ...outcome,
-        owner: outcome.created_by_profile ? 
-          `${outcome.created_by_profile.first_name || ''} ${outcome.created_by_profile.last_name || ''}`.trim() : 
-          'Unknown',
-        interval: outcome.interval,
-        status: outcome.status,
-        startDate: new Date(outcome.start_date),
-        lastUpdated: outcome.updated_at,
-        reportingDates: []
-      })) || [];
+      return data as OutcomeWithProfile[];
     },
     enabled: true,
     retry: 1,
@@ -110,10 +98,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         throw error;
       }
 
-      return (data || []).map(log => ({
-        ...log,
-        profiles: log.user || { first_name: null, last_name: null }
-      })) as ActivityLogWithProfile[];
+      return data as ActivityLogWithProfile[];
     },
     enabled: !!selectedCompanyId
   });

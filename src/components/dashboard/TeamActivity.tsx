@@ -5,21 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
-
-interface ActivityLog {
-  id: string;
-  action: string;
-  entity_id: string;
-  details: any;
-  created_at: string;
-  profiles: {
-    first_name: string;
-    last_name: string;
-  } | null;
-}
+import { ActivityLogWithProfile } from "@/hooks/useDashboardData";
 
 interface TeamActivityProps {
-  activityLogs: ActivityLog[];
+  activityLogs: ActivityLogWithProfile[];
   isLoading: boolean;
 }
 
@@ -101,8 +90,8 @@ const TeamActivity = ({ activityLogs, isLoading }: TeamActivityProps) => {
                 >
                   <div>
                     <p className="font-medium text-gray-900">
-                      {update.profiles ? 
-                        `${update.profiles.first_name} ${update.profiles.last_name}` : 
+                      {update.user ? 
+                        `${update.user.first_name} ${update.user.last_name}` : 
                         'Unknown User'}
                     </p>
                     <p className="text-sm text-gray-600">
