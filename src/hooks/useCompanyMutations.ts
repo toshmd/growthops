@@ -9,11 +9,34 @@ export const useCompanyMutations = () => {
 
   const createCompanyMutation = useMutation({
     mutationFn: async (data: { name: string; description?: string }) => {
-      const { error } = await supabase
+      // First get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!user) throw new Error("No authenticated user");
+
+      // Start a Supabase transaction using RPC
+      const { data: company, error: companyError } = await supabase
         .from('companies')
-        .insert([data]);
+        .insert([data])
+        .select()
+        .single();
       
-      if (error) throw error;
+      if (companyError) throw companyError;
+      if (!company) throw new Error("Failed to create company");
+
+      // Create the people record for the advisor
+      const { error: peopleError } = await supabase
+        .from('people')
+        .insert([{
+          user_id: user.id,
+          company_id: company.id,
+          role: 'admin',
+          is_advisor: true
+        }]);
+      
+      if (peopleError) throw peopleError;
+
+      return company;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -22,7 +45,8 @@ export const useCompanyMutations = () => {
         description: "Company created successfully",
       });
     },
-    onError: () => {
+    onError: (error: Error) => {
+      console.error('Company creation error:', error);
       toast({
         title: "Error",
         description: "Failed to create company. Please try again.",
