@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Database } from "@/integrations/supabase/types";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { Outcome } from "@/types/outcome";
 
 type Profile = {
   first_name: string | null;
@@ -97,8 +98,18 @@ const Index = () => {
   const weekStart = startOfWeek(today);
   const weekEnd = endOfWeek(today);
   
-  const dueThisWeek = outcomes?.filter(outcome => {
-    const dueDate = parseISO(outcome.next_due);
+  const dueThisWeek = outcomes?.map(outcome => ({
+    id: parseInt(outcome.id),
+    title: outcome.title,
+    description: outcome.description || '',
+    interval: outcome.interval as Outcome['interval'],
+    nextDue: outcome.next_due,
+    status: outcome.status || 'pending',
+    startDate: new Date(outcome.start_date),
+    teamId: outcome.team_id,
+    reportingDates: [],
+  })).filter(outcome => {
+    const dueDate = parseISO(outcome.nextDue);
     return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
   }) || [];
 
