@@ -53,7 +53,7 @@ const Administrators = () => {
           company:company_id (
             name
           ),
-          profiles:user_id (
+          profiles!inner (
             first_name,
             last_name,
             id
@@ -62,13 +62,14 @@ const Administrators = () => {
         .eq('is_advisor', true);
       
       if (error) throw error;
+      if (!data) return [];
 
       // Transform the data to match the Administrator type
-      return (data || []).map(admin => ({
+      return data.map(admin => ({
         id: admin.id,
         profiles: {
-          first_name: admin.profiles?.first_name,
-          last_name: admin.profiles?.last_name,
+          first_name: admin.profiles?.first_name || '',
+          last_name: admin.profiles?.last_name || '',
           email: admin.profiles?.id // Using id as email since that's what we get from auth
         },
         is_advisor: admin.is_advisor,
