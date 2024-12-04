@@ -76,10 +76,10 @@ ALTER TABLE people ENABLE ROW LEVEL SECURITY;
 -- Drop existing policies
 DROP POLICY IF EXISTS profiles_select ON profiles;
 DROP POLICY IF EXISTS profiles_update ON profiles;
-DROP POLICY IF EXISTS people_select ON profiles;
-DROP POLICY IF EXISTS people_insert ON profiles;
-DROP POLICY IF EXISTS people_update ON profiles;
-DROP POLICY IF EXISTS people_delete ON profiles;
+DROP POLICY IF EXISTS people_select ON people;
+DROP POLICY IF EXISTS people_insert ON people;
+DROP POLICY IF EXISTS people_update ON people;
+DROP POLICY IF EXISTS people_delete ON people;
 
 -- Create new RLS policies for profiles
 CREATE POLICY profiles_select ON profiles FOR SELECT TO authenticated USING (true);
