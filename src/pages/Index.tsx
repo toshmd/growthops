@@ -53,7 +53,7 @@ const Index = () => {
         throw error;
       }
       
-      return data as OutcomeWithProfile[];
+      return (data || []) as OutcomeWithProfile[];
     },
     enabled: !!selectedCompanyId,
   });
@@ -82,7 +82,7 @@ const Index = () => {
         throw error;
       }
 
-      return data as ActivityLogWithProfile[];
+      return (data || []) as ActivityLogWithProfile[];
     },
     enabled: !!selectedCompanyId,
   });
