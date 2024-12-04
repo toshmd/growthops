@@ -51,6 +51,7 @@ const Administrators = () => {
           is_advisor,
           role,
           company:company_id (
+            id,
             name
           ),
           profiles!inner (
