@@ -28,7 +28,8 @@ const Administrators = () => {
   const { data: administrators = [], isLoading, error } = useQuery({
     queryKey: ['administrators'],
     queryFn: async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
       if (!session) throw new Error('Not authenticated');
 
       // First check if the user is an advisor
@@ -55,7 +56,7 @@ const Administrators = () => {
           profiles:user_id (
             first_name,
             last_name,
-            email:id
+            id
           )
         `)
         .eq('is_advisor', true);
@@ -68,7 +69,7 @@ const Administrators = () => {
         profiles: {
           first_name: admin.profiles?.first_name,
           last_name: admin.profiles?.last_name,
-          email: admin.profiles?.email
+          email: admin.profiles?.id // Using id as email since that's what we get from auth
         },
         is_advisor: admin.is_advisor,
         role: admin.role,
