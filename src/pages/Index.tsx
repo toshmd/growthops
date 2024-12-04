@@ -19,11 +19,11 @@ type Profile = {
 };
 
 type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
-  profiles: Profile | null;
+  profiles: Profile;
 };
 
 type ActivityLogWithProfile = Database['public']['Tables']['activity_logs']['Row'] & {
-  profiles: Profile | null;
+  profiles: Profile;
 };
 
 const Index = () => {
@@ -53,7 +53,10 @@ const Index = () => {
         throw error;
       }
       
-      return (data || []) as OutcomeWithProfile[];
+      return (data || []).map(outcome => ({
+        ...outcome,
+        profiles: outcome.profiles || { first_name: null, last_name: null }
+      })) as OutcomeWithProfile[];
     },
     enabled: !!selectedCompanyId,
   });
@@ -82,7 +85,10 @@ const Index = () => {
         throw error;
       }
 
-      return (data || []) as ActivityLogWithProfile[];
+      return (data || []).map(log => ({
+        ...log,
+        profiles: log.profiles || { first_name: null, last_name: null }
+      })) as ActivityLogWithProfile[];
     },
     enabled: !!selectedCompanyId,
   });
