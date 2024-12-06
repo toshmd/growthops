@@ -8,9 +8,6 @@ import Tasks from "@/pages/Tasks";
 import Users from "@/pages/Users";
 import Teams from "@/pages/Teams";
 import Analytics from "@/pages/Analytics";
-import AdvisorDashboard from "@/pages/AdvisorDashboard";
-import Companies from "@/pages/advisor/Companies";
-import Administrators from "@/pages/advisor/Administrators";
 import Settings from "@/pages/Settings";
 
 export const AppLayout = () => {
@@ -30,9 +27,6 @@ export const AppLayout = () => {
             <Route path="/teams" element={<Teams />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/advisor" element={<AdvisorDashboard />} />
-            <Route path="/advisor/companies" element={<Companies />} />
-            <Route path="/advisor/administrators" element={<Administrators />} />
           </Routes>
         </main>
       </div>

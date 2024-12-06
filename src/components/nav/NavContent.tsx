@@ -2,21 +2,14 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Home,
-  FolderPlus,
   ListTodo,
   BarChart3,
   CheckSquare,
   Users,
   Group,
-  Building2,
-  UserCog,
 } from "lucide-react";
 
-interface NavContentProps {
-  isAdvisor: boolean;
-}
-
-export const NavContent = ({ isAdvisor }: NavContentProps) => (
+export const NavContent = () => (
   <div className="flex h-full flex-col py-4">
     <div className="flex flex-col space-y-2 px-3">
       <div className="mb-2">
@@ -36,14 +29,8 @@ export const NavContent = ({ isAdvisor }: NavContentProps) => (
       </Button>
 
       <div className="mt-6 mb-2">
-        <h2 className="px-2 text-lg font-semibold">Outcomes</h2>
+        <h2 className="px-2 text-lg font-semibold">Tasks</h2>
       </div>
-      <Button variant="ghost" asChild className="w-full justify-start">
-        <Link to="/manage">
-          <FolderPlus className="h-4 w-4 mr-2" />
-          Manage Outcomes
-        </Link>
-      </Button>
       <Button variant="ghost" asChild className="w-full justify-start">
         <Link to="/my-outcomes">
           <ListTodo className="h-4 w-4 mr-2" />
@@ -72,26 +59,6 @@ export const NavContent = ({ isAdvisor }: NavContentProps) => (
           Teams
         </Link>
       </Button>
-
-      {isAdvisor && (
-        <>
-          <div className="mt-6 mb-2">
-            <h2 className="px-2 text-lg font-semibold">Advisor</h2>
-          </div>
-          <Button variant="ghost" asChild className="w-full justify-start">
-            <Link to="/advisor/companies">
-              <Building2 className="h-4 w-4 mr-2" />
-              Companies
-            </Link>
-          </Button>
-          <Button variant="ghost" asChild className="w-full justify-start">
-            <Link to="/advisor/administrators">
-              <UserCog className="h-4 w-4 mr-2" />
-              Administrators
-            </Link>
-          </Button>
-        </>
-      )}
     </div>
   </div>
 );

@@ -6,13 +6,12 @@ import { NavContent } from "./nav/NavContent";
 import { useToast } from "@/components/ui/use-toast";
 
 const NavBar = () => {
-  const [isAdvisor, setIsAdvisor] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    const checkUserRole = async () => {
+    const checkUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -20,24 +19,12 @@ const NavBar = () => {
           setError("No authenticated user found");
           return;
         }
-
-        // Using RPC call to avoid RLS recursion
-        const { data, error: rpcError } = await supabase
-          .rpc('is_user_advisor', {
-            user_id: user.id
-          });
-
-        if (rpcError) {
-          throw rpcError;
-        }
-
-        setIsAdvisor(!!data);
       } catch (error: any) {
-        console.error('Error checking user role:', error);
+        console.error('Error checking user:', error);
         setError(error.message);
         toast({
           title: "Error",
-          description: "Failed to load user role",
+          description: "Failed to load user",
           variant: "destructive",
         });
       } finally {
@@ -45,7 +32,7 @@ const NavBar = () => {
       }
     };
 
-    checkUserRole();
+    checkUser();
   }, [toast]);
 
   if (isLoading) {
@@ -58,7 +45,7 @@ const NavBar = () => {
 
   return (
     <nav className="fixed left-0 top-0 h-screen w-64 border-r bg-sidebar-background">
-      <NavContent isAdvisor={isAdvisor} />
+      <NavContent />
     </nav>
   );
 };
