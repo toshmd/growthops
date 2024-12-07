@@ -4,19 +4,37 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/components/ui/use-toast";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
       if (session) {
         navigate("/");
       }
     });
 
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Checking existing session:", session);
+      if (session) {
+        navigate("/");
+      }
+    }).catch(error => {
+      console.error("Session check error:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to check login status. Please try again.",
+      });
+    });
+
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -43,9 +61,18 @@ const Login = () => {
               container: 'flex flex-col gap-4',
               button: 'bg-primary text-primary-foreground hover:bg-primary/90',
               input: 'bg-background',
+              message: 'text-destructive text-sm',
             }
           }}
           providers={[]}
+          onError={(error) => {
+            console.error("Auth error:", error);
+            toast({
+              variant: "destructive",
+              title: "Authentication Error",
+              description: error.message || "Failed to sign in. Please check your credentials and try again.",
+            });
+          }}
         />
       </Card>
     </div>
