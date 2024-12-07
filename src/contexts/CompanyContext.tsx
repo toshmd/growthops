@@ -8,7 +8,6 @@ interface CompanyContextType {
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const CompanyProvider = ({ children }: { children: ReactNode }) => {
-  // Since we're removing company functionality, we'll just provide a no-op implementation
   const setSelectedCompanyId = () => {};
 
   return (
