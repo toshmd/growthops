@@ -1,33 +1,21 @@
-import { createContext, useContext, useState, ReactNode } from "react";
-import { Company } from "@/types/company";
+import { createContext, useContext, ReactNode } from "react";
 
 interface CompanyContextType {
-  companies: Company[];
   selectedCompanyId: string | null;
   setSelectedCompanyId: (id: string) => void;
-  addCompany: (company: Company) => void;
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
 
 export const CompanyProvider = ({ children }: { children: ReactNode }) => {
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
-
-  const addCompany = (company: Company) => {
-    setCompanies((prev) => [...prev, company]);
-    if (!selectedCompanyId) {
-      setSelectedCompanyId(company.id);
-    }
-  };
+  // Since we're removing company functionality, we'll just provide a no-op implementation
+  const setSelectedCompanyId = () => {};
 
   return (
     <CompanyContext.Provider
       value={{
-        companies,
-        selectedCompanyId,
+        selectedCompanyId: null,
         setSelectedCompanyId,
-        addCompany,
       }}
     >
       {children}
