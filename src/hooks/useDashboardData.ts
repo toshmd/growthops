@@ -32,18 +32,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      let companyId = selectedCompanyId;
-      if (!companyId) {
-        const { data: peopleData } = await supabase
-          .from('people')
-          .select('company_id')
-          .eq('user_id', user.id)
-          .single();
-        
-        companyId = peopleData?.company_id || null;
-      }
-
-      if (!companyId) {
+      if (!selectedCompanyId) {
         return [];
       }
 
@@ -56,7 +45,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
             last_name
           )
         `)
-        .eq('company_id', companyId)
+        .eq('team_id', selectedCompanyId)
         .returns<(Database["public"]["Tables"]["outcomes"]["Row"] & {
           created_by_profile: Profile;
         })[]>();
