@@ -14,11 +14,11 @@ type ActivityLogDetails = {
   new_owner?: string;
 };
 
-export type OutcomeWithProfile = Database['public']['Tables']['outcomes']['Row'] & {
+export type OutcomeWithProfile = Database["public"]["Tables"]["outcomes"]["Row"] & {
   created_by_profile: Profile;
 };
 
-export type ActivityLogWithProfile = Database['public']['Tables']['activity_logs']['Row'] & {
+export type ActivityLogWithProfile = Database["public"]["Tables"]["activity_logs"]["Row"] & {
   user: Profile;
   details: ActivityLogDetails;
 };
@@ -40,7 +40,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
           .eq('user_id', user.id)
           .single();
         
-        companyId = peopleData?.company_id;
+        companyId = peopleData?.company_id || null;
       }
 
       if (!companyId) {
@@ -56,14 +56,20 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
             last_name
           )
         `)
-        .eq('company_id', companyId);
+        .eq('company_id', companyId)
+        .returns<(Database["public"]["Tables"]["outcomes"]["Row"] & {
+          created_by_profile: Profile;
+        })[]>();
 
       if (error) {
         console.error('Error fetching outcomes:', error);
         throw error;
       }
 
-      return data as OutcomeWithProfile[];
+      return data.map(outcome => ({
+        ...outcome,
+        created_by_profile: outcome.created_by_profile || { first_name: null, last_name: null }
+      }));
     },
     meta: {
       errorMessage: "Failed to load outcomes"
@@ -86,17 +92,22 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         `)
         .eq('entity_type', 'outcome')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(10)
+        .returns<(Database["public"]["Tables"]["activity_logs"]["Row"] & {
+          user: Profile;
+          details: ActivityLogDetails;
+        })[]>();
 
       if (error) {
         console.error('Error fetching activity:', error);
         throw error;
       }
 
-      return (data || []).map(log => ({
+      return data.map(log => ({
         ...log,
+        user: log.user || { first_name: null, last_name: null },
         details: log.details as ActivityLogDetails
-      })) as ActivityLogWithProfile[];
+      }));
     },
     enabled: !!selectedCompanyId,
     meta: {
