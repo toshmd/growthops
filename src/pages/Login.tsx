@@ -17,7 +17,7 @@ const Login = () => {
       console.log("Auth state changed:", event, session);
       if (event === 'SIGNED_IN' && session) {
         navigate("/");
-      } else if (event === 'USER_DELETED' || event === 'SIGNED_OUT') {
+      } else if (event === 'SIGNED_OUT') {
         toast({
           title: "Signed out",
           description: "You have been signed out successfully",
@@ -82,14 +82,6 @@ const Login = () => {
             }
           }}
           providers={[]}
-          onError={(error) => {
-            console.error("Auth error:", error);
-            toast({
-              variant: "destructive",
-              title: "Authentication Error",
-              description: "Invalid login credentials. Please try again.",
-            });
-          }}
         />
       </Card>
     </div>
