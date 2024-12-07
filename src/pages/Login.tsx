@@ -65,14 +65,6 @@ const Login = () => {
             }
           }}
           providers={[]}
-          onError={(error) => {
-            console.error("Auth error:", error);
-            toast({
-              variant: "destructive",
-              title: "Authentication Error",
-              description: error.message || "Failed to sign in. Please check your credentials and try again.",
-            });
-          }}
         />
       </Card>
     </div>
