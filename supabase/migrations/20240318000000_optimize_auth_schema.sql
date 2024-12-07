@@ -49,28 +49,39 @@ DROP POLICY IF EXISTS people_delete ON people;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE people ENABLE ROW LEVEL SECURITY;
 
--- Create basic RLS policies for profiles without recursion
-CREATE POLICY "Profiles are viewable by everyone"
+-- Simple, non-recursive policies for profiles
+CREATE POLICY "Allow public read access to profiles"
 ON profiles FOR SELECT
+TO public
 USING (true);
 
-CREATE POLICY "Users can update their own profile"
+CREATE POLICY "Allow users to update their own profile"
 ON profiles FOR UPDATE
+TO authenticated
 USING (auth.uid() = id);
 
--- Create basic RLS policies for people without recursion
-CREATE POLICY "People records are viewable by everyone"
+-- Simple, non-recursive policies for people
+CREATE POLICY "Allow authenticated read access to people"
 ON people FOR SELECT
+TO authenticated
 USING (true);
 
-CREATE POLICY "Users can insert their own people record"
+CREATE POLICY "Allow users to insert their own people record"
 ON people FOR INSERT
+TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update their own people record"
+CREATE POLICY "Allow users to update their own people record"
 ON people FOR UPDATE
+TO authenticated
 USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can delete their own people record"
+CREATE POLICY "Allow users to delete their own people record"
 ON people FOR DELETE
+TO authenticated
 USING (auth.uid() = user_id);
+
+-- Grant necessary permissions
+GRANT SELECT ON profiles TO anon, authenticated;
+GRANT UPDATE ON profiles TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON people TO authenticated;
