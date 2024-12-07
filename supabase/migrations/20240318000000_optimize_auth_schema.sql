@@ -37,16 +37,6 @@ CREATE TRIGGER update_profiles_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
--- Drop advisor-related objects
-DROP MATERIALIZED VIEW IF EXISTS cached_advisor_status;
-DROP FUNCTION IF EXISTS refresh_advisor_cache CASCADE;
-DROP FUNCTION IF EXISTS is_user_advisor CASCADE;
-DROP FUNCTION IF EXISTS give_user_access_to_all_companies CASCADE;
-
--- Ensure RLS is enabled
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE people ENABLE ROW LEVEL SECURITY;
-
 -- Drop existing policies
 DROP POLICY IF EXISTS profiles_select ON profiles;
 DROP POLICY IF EXISTS profiles_update ON profiles;
@@ -55,28 +45,36 @@ DROP POLICY IF EXISTS people_insert ON people;
 DROP POLICY IF EXISTS people_update ON people;
 DROP POLICY IF EXISTS people_delete ON people;
 
--- Create new simplified RLS policies for profiles
-CREATE POLICY profiles_select ON profiles 
-    FOR SELECT TO authenticated 
-    USING (true);
+-- Ensure RLS is enabled
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE people ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY profiles_update ON profiles 
-    FOR UPDATE TO authenticated 
-    USING (auth.uid() = id);
+-- Create simplified RLS policies for profiles
+CREATE POLICY "Public profiles are viewable by everyone"
+ON profiles FOR SELECT
+USING (true);
 
--- Create new simplified RLS policies for people
-CREATE POLICY people_select ON people 
-    FOR SELECT TO authenticated 
-    USING (true);
+CREATE POLICY "Users can update own profile"
+ON profiles FOR UPDATE
+USING (auth.uid() = id);
 
-CREATE POLICY people_insert ON people 
-    FOR INSERT TO authenticated 
-    WITH CHECK (auth.uid() = user_id);
+-- Create simplified RLS policies for people
+CREATE POLICY "People records are viewable by authenticated users"
+ON people FOR SELECT
+TO authenticated
+USING (true);
 
-CREATE POLICY people_update ON people 
-    FOR UPDATE TO authenticated 
-    USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own record"
+ON people FOR INSERT
+TO authenticated
+WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY people_delete ON people 
-    FOR DELETE TO authenticated 
-    USING (auth.uid() = user_id);
+CREATE POLICY "Users can update their own record"
+ON people FOR UPDATE
+TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own record"
+ON people FOR DELETE
+TO authenticated
+USING (auth.uid() = user_id);
