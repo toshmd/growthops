@@ -2,19 +2,26 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
+import { Loader2 } from "lucide-react";
 
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
-      if (session) {
+      if (event === 'SIGNED_IN' && session) {
         navigate("/");
+      } else if (event === 'USER_DELETED' || event === 'SIGNED_OUT') {
+        toast({
+          title: "Signed out",
+          description: "You have been signed out successfully",
+        });
       }
     });
 
@@ -31,10 +38,20 @@ const Login = () => {
         title: "Error",
         description: "Failed to check login status. Please try again.",
       });
+    }).finally(() => {
+      setIsLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, [navigate, toast]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -65,6 +82,14 @@ const Login = () => {
             }
           }}
           providers={[]}
+          onError={(error) => {
+            console.error("Auth error:", error);
+            toast({
+              variant: "destructive",
+              title: "Authentication Error",
+              description: "Invalid login credentials. Please try again.",
+            });
+          }}
         />
       </Card>
     </div>
