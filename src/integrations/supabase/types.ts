@@ -62,9 +62,9 @@ export type Database = {
           description?: string | null
           id?: string
           interval: string
-          next_due: string
+          next_due?: string
           parent_outcome_id?: string | null
-          start_date: string
+          start_date?: string
           status?: string | null
           team_id?: string | null
           title: string

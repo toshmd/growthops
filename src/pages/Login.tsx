@@ -24,6 +24,10 @@ const Login = () => {
       const sanitizedEvent = sanitizeInput(event);
       
       if (event === 'SIGNED_IN' && session) {
+        // Store the UTC timestamp of the login
+        const loginTime = new Date().toISOString();
+        console.log("User signed in at (UTC):", loginTime);
+        
         toast({
           title: "Welcome back!",
           description: "You have been successfully signed in.",
@@ -58,7 +62,7 @@ const Login = () => {
         }
         
         if (session) {
-          console.log("Existing session found, redirecting to dashboard");
+          console.log("Existing session found at (UTC):", new Date().toISOString());
           navigate("/");
         }
       } catch (error: any) {
