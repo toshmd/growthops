@@ -7,6 +7,7 @@ import { ChevronUp, Edit2 } from "lucide-react";
 import { useState } from "react";
 import ActionItems from "../process/ActionItems";
 import { useToast } from "../ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DateCardProps {
   date: Date;
@@ -20,18 +21,56 @@ export const DateCard = ({ date, process, status }: DateCardProps) => {
   const [notes, setNotes] = useState(status === "done" ? "Completed on time" : "");
   const [actionItems, setActionItems] = useState<any[]>([]);
 
-  const handleUpdateNotes = (processId: number, date: Date, notes: string) => {
-    toast({
-      title: "Notes Updated",
-      description: "The notes have been saved successfully.",
-    });
+  const handleUpdateNotes = async (processId: number, date: Date, notes: string) => {
+    try {
+      const { error } = await supabase
+        .from('outcomes')
+        .update({ 
+          description: notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', processId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Notes Updated",
+        description: "The notes have been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating notes:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update notes. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleUpdateActionItems = (processId: number, date: Date, items: any[]) => {
-    toast({
-      title: "Action Items Updated",
-      description: "The action items have been saved successfully.",
-    });
+  const handleUpdateActionItems = async (processId: number, date: Date, items: any[]) => {
+    try {
+      const { error } = await supabase
+        .from('outcomes')
+        .update({ 
+          details: { actionItems: items },
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', processId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Action Items Updated",
+        description: "The action items have been saved successfully.",
+      });
+    } catch (error) {
+      console.error('Error updating action items:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update action items. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getStatusColor = (status: string) => {

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { format, isBefore, startOfDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import Goals from "@/components/Goals";
 import { UseFormReturn } from "react-hook-form";
@@ -32,7 +32,10 @@ export const formSchema = z.object({
   goals: z.array(z.string()),
   startDate: z.date({
     required_error: "Start date is required",
-  }),
+  }).refine(
+    (date) => !isBefore(date, startOfDay(new Date())),
+    "Start date cannot be in the past"
+  ),
 });
 
 type FormData = z.infer<typeof formSchema>;
