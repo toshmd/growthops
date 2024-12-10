@@ -81,7 +81,8 @@ const TeamPerformanceMetrics = () => {
 
         // Calculate member metrics
         const members = team.people.map(person => {
-          const profile = person.profiles as Profile;
+          // Get the first profile from the array since each person should only have one profile
+          const profile = person.profiles[0] as Profile;
           const memberOutcomes = outcomes?.filter(o => o.created_by === person.user_id) || [];
           const memberCompleted = memberOutcomes.filter(o => o.status === 'completed').length;
           const memberOverdue = memberOutcomes.filter(o => {
