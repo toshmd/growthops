@@ -2,7 +2,9 @@ import { Accordion } from "@/components/ui/accordion";
 import { useMemo } from "react";
 import GoalCard from "./GoalCard";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface OutcomesListProps {
   groupedOutcomes: Record<string, any[]>;
@@ -10,6 +12,8 @@ interface OutcomesListProps {
   onEdit: (goal: string) => void;
   onDelete: (goal: string) => void;
   onAddOutcome: (goal: string) => void;
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
 const OutcomesList = ({ 
@@ -17,7 +21,9 @@ const OutcomesList = ({
   searchQuery, 
   onEdit, 
   onDelete, 
-  onAddOutcome 
+  onAddOutcome,
+  isLoading,
+  error
 }: OutcomesListProps) => {
   // Memoize filtered outcomes to prevent unnecessary recalculations
   const filteredOutcomes = useMemo(() => {
@@ -33,6 +39,26 @@ const OutcomesList = ({
       return acc;
     }, {});
   }, [groupedOutcomes, searchQuery]);
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="my-4">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error loading outcomes</AlertTitle>
+        <AlertDescription>{error.message}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-32 w-full" />
+        ))}
+      </div>
+    );
+  }
 
   if (Object.keys(filteredOutcomes).length === 0) {
     return (

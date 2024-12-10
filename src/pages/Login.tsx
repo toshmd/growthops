@@ -4,8 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import ErrorBoundary from "@/components/advisor/ErrorBoundary";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -79,12 +81,15 @@ const Login = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin" />
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Checking authentication...</p>
+        </div>
       </div>
     );
   }
 
-  return (
+  const LoginContent = () => (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md p-8">
         <div className="mb-8">
@@ -93,7 +98,11 @@ const Login = () => {
             Please sign in to continue to your dashboard
           </p>
           {authError && (
-            <p className="text-destructive text-sm text-center mt-2">{authError}</p>
+            <Alert variant="destructive" className="mt-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Authentication Error</AlertTitle>
+              <AlertDescription>{authError}</AlertDescription>
+            </Alert>
           )}
         </div>
         <Auth
@@ -119,6 +128,12 @@ const Login = () => {
         />
       </Card>
     </div>
+  );
+
+  return (
+    <ErrorBoundary>
+      <LoginContent />
+    </ErrorBoundary>
   );
 };
 
