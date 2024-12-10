@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Plus, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DbOutcome } from "@/types/database";
 
 interface OutcomesListProps {
-  outcomes: any[];
+  outcomes: DbOutcome[];
   searchQuery: string;
   onEdit: (goal: string) => void;
   onDelete: (goal: string) => void;
@@ -29,7 +30,7 @@ const OutcomesList = ({
 }: OutcomesListProps) => {
   // Group outcomes by goal
   const groupedOutcomes = useMemo(() => {
-    return outcomes.reduce((acc: Record<string, any[]>, outcome) => {
+    return outcomes.reduce((acc: Record<string, DbOutcome[]>, outcome) => {
       const goal = outcome.title;
       if (!acc[goal]) {
         acc[goal] = [];
@@ -41,7 +42,7 @@ const OutcomesList = ({
 
   // Memoize filtered outcomes
   const filteredOutcomes = useMemo(() => {
-    return Object.entries(groupedOutcomes).reduce((acc: Record<string, any[]>, [goal, outcomes]) => {
+    return Object.entries(groupedOutcomes).reduce((acc: Record<string, DbOutcome[]>, [goal, outcomes]) => {
       const filteredGoalOutcomes = outcomes.filter(
         outcome =>
           goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
