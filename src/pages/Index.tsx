@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompany } from "@/contexts/CompanyContext";
@@ -26,23 +26,51 @@ const Index = () => {
     activityError
   } = useDashboardData(selectedCompanyId);
 
-  const today = new Date();
-  const weekStart = startOfWeek(today);
-  const weekEnd = endOfWeek(today);
+  // Memoize date calculations
+  const dates = useMemo(() => {
+    const today = new Date();
+    return {
+      weekStart: startOfWeek(today),
+      weekEnd: endOfWeek(today)
+    };
+  }, []);
   
-  const mappedOutcomes = mapOutcomesToDueThisWeek(outcomes);
-  const dueThisWeek = mappedOutcomes.filter(outcome => {
-    const dueDate = parseISO(outcome.nextDue);
-    return isWithinInterval(dueDate, { start: weekStart, end: weekEnd });
-  });
+  // Memoize mapped outcomes
+  const mappedOutcomes = useMemo(() => 
+    mapOutcomesToDueThisWeek(outcomes), [outcomes]
+  );
 
-  const stats = calculateDashboardStats(outcomes);
+  // Memoize filtered outcomes for this week
+  const dueThisWeek = useMemo(() => 
+    mappedOutcomes.filter(outcome => {
+      const dueDate = parseISO(outcome.nextDue);
+      return isWithinInterval(dueDate, { 
+        start: dates.weekStart, 
+        end: dates.weekEnd 
+      });
+    }), [mappedOutcomes, dates]
+  );
 
-  const completionData = [
+  // Memoize stats calculation
+  const stats = useMemo(() => 
+    calculateDashboardStats(outcomes), [outcomes]
+  );
+
+  // Memoize completion data
+  const completionData = useMemo(() => [
     { name: 'Completed', value: stats.completed },
     { name: 'In Progress', value: stats.inProgress },
     { name: 'Overdue', value: stats.overdue },
-  ];
+  ], [stats]);
+
+  // Memoize subscription callback
+  const handleOutcomesChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+  }, [queryClient]);
+
+  const handleActivityChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['activity_logs'] });
+  }, [queryClient]);
 
   // Subscribe to real-time updates
   useEffect(() => {
@@ -58,9 +86,7 @@ const Index = () => {
           table: 'outcomes',
           filter: `company_id=eq.${selectedCompanyId}`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['outcomes'] });
-        }
+        handleOutcomesChange
       )
       .subscribe();
 
@@ -74,9 +100,7 @@ const Index = () => {
           table: 'activity_logs',
           filter: `entity_type=eq.outcome`,
         },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['activity_logs'] });
-        }
+        handleActivityChange
       )
       .subscribe();
 
@@ -84,7 +108,7 @@ const Index = () => {
       outcomeChannel.unsubscribe();
       activityChannel.unsubscribe();
     };
-  }, [selectedCompanyId, queryClient]);
+  }, [selectedCompanyId, handleOutcomesChange, handleActivityChange]);
 
   if (outcomesError || activityError) {
     return (

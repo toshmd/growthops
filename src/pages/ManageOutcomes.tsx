@@ -1,16 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { Accordion } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ProcessProps } from "@/types/team-metrics";
 import CreateOutcome from "./CreateOutcome";
 import ManageOutcomesHeader from "@/components/manage-outcomes/ManageOutcomesHeader";
-import GoalCard from "@/components/manage-outcomes/GoalCard";
-import ManageOutcomesLoading from "@/components/manage-outcomes/ManageOutcomesLoading";
+import OutcomesList from "@/components/manage-outcomes/OutcomesList";
 import DeleteConfirmDialog from "@/components/manage-outcomes/DeleteConfirmDialog";
 import EditGoalDialog from "@/components/manage-outcomes/EditGoalDialog";
 import AddGoalForm from "@/components/manage-outcomes/AddGoalForm";
@@ -34,7 +29,7 @@ const ManageOutcomes = () => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch outcomes from Supabase
-  const { data: outcomes, isLoading } = useQuery({
+  const { data: outcomes = [], isLoading } = useQuery({
     queryKey: ['outcomes', selectedYear, selectedCompanyId],
     queryFn: async () => {
       if (!selectedCompanyId) {
@@ -60,6 +55,23 @@ const ManageOutcomes = () => {
     },
     enabled: !!selectedCompanyId,
   });
+
+  // Memoize grouped outcomes to prevent unnecessary recalculations
+  const groupedOutcomes = useMemo(() => {
+    return outcomes.reduce((acc, outcome) => {
+      const goalCategory = outcome.title.split(':')[0] || outcome.title;
+      if (!acc[goalCategory]) {
+        acc[goalCategory] = [];
+      }
+      acc[goalCategory].push({
+        id: outcome.id,
+        title: outcome.title.split(':')[1] || outcome.title,
+        interval: outcome.interval,
+        year: new Date(outcome.created_at).getFullYear()
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+  }, [outcomes]);
 
   // Add outcome mutation
   const addOutcomeMutation = useMutation({
@@ -162,34 +174,6 @@ const ManageOutcomes = () => {
     }
   });
 
-  // Group outcomes by their goals
-  const groupedOutcomes = outcomes?.reduce((acc, outcome) => {
-    const goalCategory = outcome.title.split(':')[0] || outcome.title;
-    if (!acc[goalCategory]) {
-      acc[goalCategory] = [];
-    }
-    acc[goalCategory].push({
-      id: outcome.id,
-      title: outcome.title.split(':')[1] || outcome.title,
-      interval: outcome.interval,
-      year: new Date(outcome.created_at).getFullYear()
-    });
-    return acc;
-  }, {} as Record<string, any[]>) || {};
-
-  // Filter outcomes based on search
-  const filteredOutcomes = Object.entries(groupedOutcomes).reduce((acc, [goal, outcomes]) => {
-    const filteredGoalOutcomes = outcomes.filter(
-      outcome =>
-        goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        outcome.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    if (filteredGoalOutcomes.length > 0 || goal.toLowerCase().includes(searchQuery.toLowerCase())) {
-      acc[goal] = filteredGoalOutcomes;
-    }
-    return acc;
-  }, {} as Record<string, typeof outcomes>);
-
   const handleAddGoal = () => {
     if (!selectedCompanyId) {
       toast({
@@ -245,38 +229,16 @@ const ManageOutcomes = () => {
         onAddGoal={handleAddGoal}
       />
 
-      {Object.keys(filteredOutcomes).length === 0 ? (
-        <div className="text-center py-12 bg-muted/10 rounded-lg border-2 border-dashed">
-          <h3 className="text-lg font-medium mb-2">No goals found</h3>
-          <p className="text-muted-foreground mb-4">
-            {searchQuery
-              ? "Try adjusting your search terms"
-              : "Start by adding your first goal"}
-          </p>
-          {!searchQuery && (
-            <Button onClick={() => document.querySelector("input")?.focus()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Your First Goal
-            </Button>
-          )}
-        </div>
-      ) : (
-        <Accordion type="single" collapsible className="w-full">
-          {Object.entries(filteredOutcomes).map(([goal, outcomes]) => (
-            <GoalCard
-              key={goal}
-              goal={goal}
-              outcomes={outcomes}
-              onEdit={(goal) => setEditingGoal({ id: goal, name: goal })}
-              onDelete={(goal) => setShowDeleteConfirm({ type: "goal", id: goal })}
-              onAddOutcome={(goal) => {
-                setSelectedGoal(goal);
-                setShowCreateOutcome(true);
-              }}
-            />
-          ))}
-        </Accordion>
-      )}
+      <OutcomesList
+        groupedOutcomes={groupedOutcomes}
+        searchQuery={searchQuery}
+        onEdit={(goal) => setEditingGoal({ id: goal, name: goal })}
+        onDelete={(goal) => setShowDeleteConfirm({ type: "goal", id: goal })}
+        onAddOutcome={(goal) => {
+          setSelectedGoal(goal);
+          setShowCreateOutcome(true);
+        }}
+      />
 
       <EditGoalDialog
         editingGoal={editingGoal}
