@@ -11,38 +11,69 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const handleAuthChange = (event: string, session: any) => {
       console.log("Auth state changed:", event, session);
+      
       if (event === 'SIGNED_IN' && session) {
+        toast({
+          title: "Welcome back!",
+          description: "You have been successfully signed in.",
+        });
         navigate("/");
       } else if (event === 'SIGNED_OUT') {
         toast({
           title: "Signed out",
           description: "You have been signed out successfully",
         });
+      } else if (event === 'USER_DELETED') {
+        toast({
+          variant: "destructive",
+          title: "Account Deleted",
+          description: "Your account has been deleted",
+        });
+      } else if (event === 'PASSWORD_RECOVERY') {
+        toast({
+          title: "Password Recovery",
+          description: "Check your email for password reset instructions",
+        });
       }
-    });
+    };
 
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log("Checking existing session:", session);
-      if (session) {
-        navigate("/");
+    // Check existing session
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (session) {
+          console.log("Existing session found, redirecting to dashboard");
+          navigate("/");
+        }
+      } catch (error: any) {
+        console.error("Session check error:", error);
+        setAuthError(error.message);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to check login status. Please try again.",
+        });
+      } finally {
+        setIsLoading(false);
       }
-    }).catch(error => {
-      console.error("Session check error:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to check login status. Please try again.",
-      });
-    }).finally(() => {
-      setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    // Initial session check
+    checkSession();
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [navigate, toast]);
 
   if (isLoading) {
@@ -61,6 +92,9 @@ const Login = () => {
           <p className="text-center text-muted-foreground mt-2">
             Please sign in to continue to your dashboard
           </p>
+          {authError && (
+            <p className="text-destructive text-sm text-center mt-2">{authError}</p>
+          )}
         </div>
         <Auth
           supabaseClient={supabase}

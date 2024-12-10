@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { NavSkeleton } from "./nav/NavSkeleton";
 import { NavError } from "./nav/NavError";
@@ -9,31 +10,49 @@ const NavBar = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) throw userError;
         
         if (!user) {
-          setError("No authenticated user found");
+          console.log("No authenticated user found, redirecting to login");
+          navigate('/login');
           return;
         }
       } catch (error: any) {
         console.error('Error checking user:', error);
         setError(error.message);
         toast({
-          title: "Error",
-          description: "Failed to load user",
+          title: "Authentication Error",
+          description: "Please sign in again",
           variant: "destructive",
         });
+        navigate('/login');
       } finally {
         setIsLoading(false);
       }
     };
 
+    // Initial check
     checkUser();
-  }, [toast]);
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
+      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        navigate('/login');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate, toast]);
 
   if (isLoading) {
     return <NavSkeleton />;
