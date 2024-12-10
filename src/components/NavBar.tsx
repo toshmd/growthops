@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { NavSkeleton } from "./nav/NavSkeleton";
@@ -6,13 +6,29 @@ import { NavError } from "./nav/NavError";
 import { NavContent } from "./nav/NavContent";
 import { useToast } from "@/components/ui/use-toast";
 
+const MemoizedNavContent = memo(NavContent);
+MemoizedNavContent.displayName = 'MemoizedNavContent';
+
 const NavBar = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const handleAuthError = useCallback((error: Error) => {
+    console.error('Error checking user:', error);
+    setError(error.message);
+    toast({
+      title: "Authentication Error",
+      description: "Please sign in again",
+      variant: "destructive",
+    });
+    navigate('/login');
+  }, [navigate, toast]);
+
   useEffect(() => {
+    let mounted = true;
+
     const checkUser = async () => {
       try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -25,34 +41,30 @@ const NavBar = () => {
           return;
         }
       } catch (error: any) {
-        console.error('Error checking user:', error);
-        setError(error.message);
-        toast({
-          title: "Authentication Error",
-          description: "Please sign in again",
-          variant: "destructive",
-        });
-        navigate('/login');
+        if (mounted) {
+          handleAuthError(error);
+        }
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    // Initial check
     checkUser();
 
-    // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event, session);
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' && mounted) {
         navigate('/login');
       }
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, toast]);
+  }, [navigate, handleAuthError]);
 
   if (isLoading) {
     return <NavSkeleton />;
@@ -64,9 +76,9 @@ const NavBar = () => {
 
   return (
     <nav className="fixed left-0 top-0 h-screen w-64 border-r bg-sidebar-background">
-      <NavContent />
+      <MemoizedNavContent />
     </nav>
   );
 };
 
-export default NavBar;
+export default memo(NavBar);

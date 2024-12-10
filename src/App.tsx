@@ -1,3 +1,4 @@
+import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,21 +7,57 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-route
 import { CompanyProvider } from "./contexts/CompanyContext";
 import { AuthLayout } from "./layouts/AuthLayout";
 import { AppLayout } from "./layouts/AppLayout";
-import Login from "./pages/Login";
 
-const queryClient = new QueryClient();
+// Lazy load the Login component
+const Login = lazy(() => import("./pages/Login"));
+
+// Configure QueryClient with optimized settings
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      cacheTime: 1000 * 60 * 30, // 30 minutes
+      retry: 3,
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      suspense: true,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: 'always',
+    },
+  },
+});
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-pulse space-y-4">
+      <div className="h-12 w-12 bg-muted rounded-full mx-auto" />
+      <div className="h-4 w-32 bg-muted rounded mx-auto" />
+    </div>
+  </div>
+);
 
 const AppContent = () => {
   const location = useLocation();
 
   return (
     <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/*" element={
-        <AuthLayout>
-          <AppLayout />
-        </AuthLayout>
-      } />
+      <Route 
+        path="/login" 
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Login />
+          </Suspense>
+        } 
+      />
+      <Route 
+        path="/*" 
+        element={
+          <Suspense fallback={<LoadingFallback />}>
+            <AuthLayout>
+              <AppLayout />
+            </AuthLayout>
+          </Suspense>
+        } 
+      />
     </Routes>
   );
 };
