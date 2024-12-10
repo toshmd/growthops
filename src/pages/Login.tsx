@@ -40,6 +40,12 @@ const Login = () => {
           const loginTime = new Date().toISOString();
           console.log("User signed in at (UTC):", loginTime);
           
+          // Validate session token
+          const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+          if (sessionError || !user) {
+            throw new Error('Invalid session');
+          }
+          
           if (isMounted.current) {
             toast({
               title: "Welcome back!",
@@ -92,6 +98,12 @@ const Login = () => {
         }
         
         if (session && isMounted.current) {
+          // Validate session token
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError || !user) {
+            throw new Error('Invalid session');
+          }
+          
           console.log("Existing session found at (UTC):", new Date().toISOString());
           navigate("/");
         }
