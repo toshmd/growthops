@@ -5,6 +5,13 @@ export const TOAST_REMOVE_DELAY = 5000 // 5 seconds
 
 export const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
 
+type DispatchFunction = (action: ToastAction) => void;
+let dispatchFunction: DispatchFunction | null = null;
+
+export const setDispatch = (dispatch: DispatchFunction) => {
+  dispatchFunction = dispatch;
+};
+
 export const addToRemoveQueue = (toastId: string) => {
   if (toastTimeouts.has(toastId)) {
     clearTimeout(toastTimeouts.get(toastId))
@@ -12,10 +19,12 @@ export const addToRemoveQueue = (toastId: string) => {
 
   const timeout = setTimeout(() => {
     toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
+    if (dispatchFunction) {
+      dispatchFunction({
+        type: "REMOVE_TOAST",
+        toastId: toastId,
+      })
+    }
   }, TOAST_REMOVE_DELAY)
 
   toastTimeouts.set(toastId, timeout)

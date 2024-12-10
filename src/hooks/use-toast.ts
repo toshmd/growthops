@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Toast, ToasterToast, ToastState } from "@/types/toast"
-import { reducer, toastTimeouts } from "./toast-reducer"
+import { reducer, toastTimeouts, setDispatch } from "./toast-reducer"
 
 let count = 0
 
@@ -18,6 +18,9 @@ function dispatch(action: Parameters<typeof reducer>[1]) {
     listener(memoryState)
   })
 }
+
+// Set the dispatch function when this module is loaded
+setDispatch(dispatch);
 
 function toast({ ...props }: Toast) {
   const id = genId()
