@@ -31,6 +31,11 @@ interface Team {
   members: TeamMember[];
 }
 
+interface Profile {
+  first_name: string | null;
+  last_name: string | null;
+}
+
 const TeamPerformanceMetrics = () => {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([]);
   const { selectedCompanyId } = useCompany();
@@ -48,7 +53,7 @@ const TeamPerformanceMetrics = () => {
           name,
           people (
             user_id,
-            profiles (
+            profiles!inner (
               first_name,
               last_name
             )
@@ -76,6 +81,7 @@ const TeamPerformanceMetrics = () => {
 
         // Calculate member metrics
         const members = team.people.map(person => {
+          const profile = person.profiles as Profile;
           const memberOutcomes = outcomes?.filter(o => o.created_by === person.user_id) || [];
           const memberCompleted = memberOutcomes.filter(o => o.status === 'completed').length;
           const memberOverdue = memberOutcomes.filter(o => {
@@ -84,7 +90,7 @@ const TeamPerformanceMetrics = () => {
           }).length;
 
           return {
-            name: `${person.profiles?.first_name || ''} ${person.profiles?.last_name || ''}`.trim(),
+            name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
             completionRate: memberOutcomes.length ? (memberCompleted / memberOutcomes.length) * 100 : 0,
             overdueItems: memberOverdue,
             participationRate: totalOutcomes ? (memberOutcomes.length / totalOutcomes) * 100 : 0
