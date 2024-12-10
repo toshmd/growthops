@@ -14,38 +14,18 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import ErrorBoundary from "../advisor/ErrorBoundary";
-
-interface TeamMember {
-  name: string;
-  completionRate: number;
-  overdueItems: number;
-  participationRate: number;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  completionRate: number;
-  overdueItems: number;
-  participationRate: number;
-  members: TeamMember[];
-}
-
-interface Profile {
-  first_name: string | null;
-  last_name: string | null;
-}
+import { Team, TeamMember } from "@/types/team-metrics";
+import { DbProfile } from "@/types/database";
 
 const TeamPerformanceMetrics = () => {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([]);
   const { selectedCompanyId } = useCompany();
 
-  const { data: teams = [], isLoading, error } = useQuery({
+  const { data: teams = [], isLoading, error } = useQuery<Team[]>({
     queryKey: ['team-performance', selectedCompanyId],
     queryFn: async () => {
       if (!selectedCompanyId) return [];
 
-      // Fetch teams
       const { data: teamsData, error: teamsError } = await supabase
         .from('teams')
         .select(`
@@ -58,13 +38,11 @@ const TeamPerformanceMetrics = () => {
               last_name
             )
           )
-        `)
-        .eq('company_id', selectedCompanyId);
+        `);
 
       if (teamsError) throw teamsError;
 
-      // For each team, fetch outcomes and calculate metrics
-      const teamsWithMetrics = await Promise.all(teamsData.map(async (team) => {
+      const teamsWithMetrics: Team[] = await Promise.all((teamsData || []).map(async (team) => {
         const { data: outcomes, error: outcomesError } = await supabase
           .from('outcomes')
           .select('*')
@@ -79,10 +57,8 @@ const TeamPerformanceMetrics = () => {
           return dueDate < new Date() && o.status !== 'completed';
         }).length || 0;
 
-        // Calculate member metrics
-        const members = team.people.map(person => {
-          // Get the first profile from the array since each person should only have one profile
-          const profile = person.profiles[0] as Profile;
+        const members: TeamMember[] = (team.people || []).map(person => {
+          const profile = person.profiles[0] as DbProfile;
           const memberOutcomes = outcomes?.filter(o => o.created_by === person.user_id) || [];
           const memberCompleted = memberOutcomes.filter(o => o.status === 'completed').length;
           const memberOverdue = memberOutcomes.filter(o => {
@@ -104,7 +80,8 @@ const TeamPerformanceMetrics = () => {
           completionRate: totalOutcomes ? (completedOutcomes / totalOutcomes) * 100 : 0,
           overdueItems: overdueOutcomes,
           participationRate: totalOutcomes ? 100 : 0,
-          members
+          members,
+          people: team.people
         };
       }));
 
