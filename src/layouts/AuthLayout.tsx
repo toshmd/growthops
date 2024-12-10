@@ -14,12 +14,10 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
     const validateSession = async () => {
       try {
-        // Get session and validate user
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
         if (session) {
-          // Double-check user validity
           const { data: { user }, error: userError } = await supabase.auth.getUser();
           if (userError || !user) {
             throw new Error('Invalid user session');
@@ -46,27 +44,14 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
 
     validateSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         if (mounted) {
           setIsAuthenticated(event === 'SIGNED_IN');
-        }
-      } else if (event === 'SIGNED_IN') {
-        // Validate new session
-        try {
-          const { data: { user }, error } = await supabase.auth.getUser();
-          if (error || !user) throw new Error('Invalid session');
-          if (mounted) {
-            setIsAuthenticated(true);
-          }
-        } catch (error) {
-          console.error('Auth state change validation error:', error);
-          if (mounted) {
-            setIsAuthenticated(false);
+          if (event === 'SIGNED_OUT') {
             toast({
-              title: "Authentication Error",
-              description: "Please sign in again",
-              variant: "destructive",
+              title: "Signed out",
+              description: "You have been signed out successfully",
             });
           }
         }
@@ -80,12 +65,27 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   }, [toast]);
 
   if (isValidating) {
-    return null;
+    return (
+      <div 
+        className="min-h-screen flex items-center justify-center bg-background"
+        role="status"
+        aria-label="Validating authentication"
+      >
+        <div className="animate-pulse space-y-4">
+          <div className="h-12 w-12 bg-muted rounded-full mx-auto" />
+          <div className="h-4 w-32 bg-muted rounded mx-auto" />
+        </div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <div className="focus-visible:outline-none" tabIndex={-1}>
+      {children}
+    </div>
+  );
 };

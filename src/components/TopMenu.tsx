@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const ProfileInfo = memo(({ profile }: { profile: any }) => (
   <div className="flex flex-col space-y-1 p-2">
-    <p className="text-sm font-medium">
+    <p className="text-sm font-medium text-foreground">
       {profile ? `${profile.first_name} ${profile.last_name}` : 'Loading...'}
     </p>
     <p className="text-xs text-muted-foreground">
@@ -25,8 +25,11 @@ ProfileInfo.displayName = 'ProfileInfo';
 
 const AvatarComponent = memo(({ profile }: { profile: any }) => (
   <Avatar>
-    <AvatarImage src="" alt={profile?.first_name} />
-    <AvatarFallback>
+    <AvatarImage 
+      src="" 
+      alt={profile?.first_name ? `${profile.first_name}'s avatar` : 'User avatar'} 
+    />
+    <AvatarFallback aria-label="User initials">
       {profile ? `${profile.first_name?.[0]}${profile.last_name?.[0]}` : '??'}
     </AvatarFallback>
   </Avatar>
@@ -69,30 +72,49 @@ const TopMenu = () => {
   }, [navigate]);
 
   return (
-    <div className="fixed top-0 right-0 left-64 h-16 bg-background border-b z-50">
+    <header 
+      className="fixed top-0 right-0 left-64 h-16 bg-background border-b z-50" 
+      role="banner"
+      aria-label="Top navigation"
+    >
       <div className="h-full px-4 flex items-center justify-end">
         <DropdownMenu>
-          <DropdownMenuTrigger className="focus:outline-none">
+          <DropdownMenuTrigger 
+            className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2" 
+            aria-label="Open user menu"
+          >
             <AvatarComponent profile={profile} />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuContent 
+            align="end" 
+            className="w-56"
+            aria-label="User menu"
+          >
             <ProfileInfo profile={profile} />
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/settings">
-                <Settings className="mr-2 h-4 w-4" />
+              <Link 
+                to="/settings" 
+                className="flex items-center focus:bg-accent"
+                role="menuitem"
+              >
+                <Settings className="mr-2 h-4 w-4" aria-hidden="true" />
                 <span>Settings</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-              <LogOut className="mr-2 h-4 w-4" />
+            <DropdownMenuItem 
+              onClick={handleLogout} 
+              className="text-destructive focus:bg-destructive focus:text-destructive-foreground"
+              role="menuitem"
+            >
+              <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
               <span>Log out</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
+    </header>
   );
 };
 
