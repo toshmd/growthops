@@ -9,6 +9,7 @@ import OutcomesList from "@/components/manage-outcomes/OutcomesList";
 import DeleteConfirmDialog from "@/components/manage-outcomes/DeleteConfirmDialog";
 import EditGoalDialog from "@/components/manage-outcomes/EditGoalDialog";
 import AddGoalForm from "@/components/manage-outcomes/AddGoalForm";
+import ManageOutcomesLoading from "@/components/manage-outcomes/ManageOutcomesLoading";
 import { useCompany } from "@/contexts/CompanyContext";
 
 const ManageOutcomes = () => {

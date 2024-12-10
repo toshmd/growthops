@@ -21,7 +21,7 @@ const OutcomesList = ({
 }: OutcomesListProps) => {
   // Memoize filtered outcomes to prevent unnecessary recalculations
   const filteredOutcomes = useMemo(() => {
-    return Object.entries(groupedOutcomes).reduce((acc, [goal, outcomes]) => {
+    return Object.entries(groupedOutcomes).reduce((acc: Record<string, any[]>, [goal, outcomes]) => {
       const filteredGoalOutcomes = outcomes.filter(
         outcome =>
           goal.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -31,7 +31,7 @@ const OutcomesList = ({
         acc[goal] = filteredGoalOutcomes;
       }
       return acc;
-    }, {} as Record<string, typeof outcomes>);
+    }, {});
   }, [groupedOutcomes, searchQuery]);
 
   if (Object.keys(filteredOutcomes).length === 0) {
