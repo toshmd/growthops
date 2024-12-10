@@ -4,12 +4,13 @@ import { Calendar, Clock, Users } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import ProcessTimeline from "./ProcessTimeline";
 import ProcessStatusSummary from "./ProcessStatusSummary";
+import ErrorBoundary from "../advisor/ErrorBoundary";
 
 interface ProcessCardProps {
-  process: any;
+  process: any; // TODO: Add proper typing
 }
 
-const ProcessCard = ({ process }: ProcessCardProps) => {
+const ProcessCardContent = ({ process }: ProcessCardProps) => {
   return (
     <Card className="p-6">
       <div className="flex flex-col space-y-4">
@@ -51,6 +52,14 @@ const ProcessCard = ({ process }: ProcessCardProps) => {
         </Accordion>
       </div>
     </Card>
+  );
+};
+
+const ProcessCard = (props: ProcessCardProps) => {
+  return (
+    <ErrorBoundary>
+      <ProcessCardContent {...props} />
+    </ErrorBoundary>
   );
 };
 

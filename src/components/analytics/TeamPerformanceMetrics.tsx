@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import {
   Table,
@@ -10,36 +12,99 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useCompany } from "@/contexts/CompanyContext";
+import ErrorBoundary from "../advisor/ErrorBoundary";
+
+interface TeamMember {
+  name: string;
+  completionRate: number;
+  overdueItems: number;
+  participationRate: number;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  completionRate: number;
+  overdueItems: number;
+  participationRate: number;
+  members: TeamMember[];
+}
 
 const TeamPerformanceMetrics = () => {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([]);
+  const { selectedCompanyId } = useCompany();
 
-  const mockData = {
-    teams: [
-      {
-        id: "1",
-        name: "Engineering",
-        completionRate: 85,
-        overdueItems: 3,
-        participationRate: 92,
-        members: [
-          { name: "John Doe", completionRate: 90, overdueItems: 1, participationRate: 95 },
-          { name: "Jane Smith", completionRate: 80, overdueItems: 2, participationRate: 88 },
-        ],
-      },
-      {
-        id: "2",
-        name: "Marketing",
-        completionRate: 78,
-        overdueItems: 5,
-        participationRate: 85,
-        members: [
-          { name: "Alice Johnson", completionRate: 75, overdueItems: 3, participationRate: 82 },
-          { name: "Bob Wilson", completionRate: 82, overdueItems: 2, participationRate: 88 },
-        ],
-      },
-    ],
-  };
+  const { data: teams = [], isLoading, error } = useQuery({
+    queryKey: ['team-performance', selectedCompanyId],
+    queryFn: async () => {
+      if (!selectedCompanyId) return [];
+
+      // Fetch teams
+      const { data: teamsData, error: teamsError } = await supabase
+        .from('teams')
+        .select(`
+          id,
+          name,
+          people (
+            user_id,
+            profiles (
+              first_name,
+              last_name
+            )
+          )
+        `)
+        .eq('company_id', selectedCompanyId);
+
+      if (teamsError) throw teamsError;
+
+      // For each team, fetch outcomes and calculate metrics
+      const teamsWithMetrics = await Promise.all(teamsData.map(async (team) => {
+        const { data: outcomes, error: outcomesError } = await supabase
+          .from('outcomes')
+          .select('*')
+          .eq('team_id', team.id);
+
+        if (outcomesError) throw outcomesError;
+
+        const totalOutcomes = outcomes?.length || 0;
+        const completedOutcomes = outcomes?.filter(o => o.status === 'completed').length || 0;
+        const overdueOutcomes = outcomes?.filter(o => {
+          const dueDate = new Date(o.next_due);
+          return dueDate < new Date() && o.status !== 'completed';
+        }).length || 0;
+
+        // Calculate member metrics
+        const members = team.people.map(person => {
+          const memberOutcomes = outcomes?.filter(o => o.created_by === person.user_id) || [];
+          const memberCompleted = memberOutcomes.filter(o => o.status === 'completed').length;
+          const memberOverdue = memberOutcomes.filter(o => {
+            const dueDate = new Date(o.next_due);
+            return dueDate < new Date() && o.status !== 'completed';
+          }).length;
+
+          return {
+            name: `${person.profiles?.first_name || ''} ${person.profiles?.last_name || ''}`.trim(),
+            completionRate: memberOutcomes.length ? (memberCompleted / memberOutcomes.length) * 100 : 0,
+            overdueItems: memberOverdue,
+            participationRate: totalOutcomes ? (memberOutcomes.length / totalOutcomes) * 100 : 0
+          };
+        });
+
+        return {
+          id: team.id,
+          name: team.name,
+          completionRate: totalOutcomes ? (completedOutcomes / totalOutcomes) * 100 : 0,
+          overdueItems: overdueOutcomes,
+          participationRate: totalOutcomes ? 100 : 0,
+          members
+        };
+      }));
+
+      return teamsWithMetrics;
+    },
+    enabled: !!selectedCompanyId
+  });
 
   const toggleTeam = (teamId: string) => {
     setExpandedTeams(current =>
@@ -48,6 +113,31 @@ const TeamPerformanceMetrics = () => {
         : [...current, teamId]
     );
   };
+
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-red-500">
+          Error loading team performance data
+        </div>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-8 bg-gray-200 rounded"></div>
+            ))}
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6">
@@ -62,7 +152,7 @@ const TeamPerformanceMetrics = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockData.teams.map((team) => (
+          {teams.map((team) => (
             <>
               <TableRow key={team.id} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleTeam(team.id)}>
                 <TableCell className="font-medium">
@@ -74,11 +164,11 @@ const TeamPerformanceMetrics = () => {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Progress value={team.completionRate} className="w-[60px]" />
-                    <span>{team.completionRate}%</span>
+                    <span>{Math.round(team.completionRate)}%</span>
                   </div>
                 </TableCell>
                 <TableCell>{team.overdueItems}</TableCell>
-                <TableCell>{team.participationRate}%</TableCell>
+                <TableCell>{Math.round(team.participationRate)}%</TableCell>
               </TableRow>
               {expandedTeams.includes(team.id) && team.members.map((member, idx) => (
                 <TableRow key={`${team.id}-${idx}`} className="bg-muted/30">
@@ -86,11 +176,11 @@ const TeamPerformanceMetrics = () => {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Progress value={member.completionRate} className="w-[60px]" />
-                      <span>{member.completionRate}%</span>
+                      <span>{Math.round(member.completionRate)}%</span>
                     </div>
                   </TableCell>
                   <TableCell>{member.overdueItems}</TableCell>
-                  <TableCell>{member.participationRate}%</TableCell>
+                  <TableCell>{Math.round(member.participationRate)}%</TableCell>
                 </TableRow>
               ))}
             </>
@@ -101,4 +191,8 @@ const TeamPerformanceMetrics = () => {
   );
 };
 
-export default TeamPerformanceMetrics;
+export default () => (
+  <ErrorBoundary>
+    <TeamPerformanceMetrics />
+  </ErrorBoundary>
+);

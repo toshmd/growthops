@@ -32,7 +32,9 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
+      // If no company is selected, return empty array instead of throwing error
       if (!selectedCompanyId) {
+        console.log("No company selected, returning empty outcomes array");
         return [];
       }
 
@@ -45,10 +47,8 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
             last_name
           )
         `)
-        .eq('team_id', selectedCompanyId)
-        .returns<(Database["public"]["Tables"]["outcomes"]["Row"] & {
-          created_by_profile: Profile;
-        })[]>();
+        .eq('company_id', selectedCompanyId)
+        .returns<OutcomeWithProfile[]>();
 
       if (error) {
         console.error('Error fetching outcomes:', error);
@@ -60,6 +60,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         created_by_profile: outcome.created_by_profile || { first_name: null, last_name: null }
       }));
     },
+    enabled: !!selectedCompanyId,
     meta: {
       errorMessage: "Failed to load outcomes"
     }
@@ -68,7 +69,10 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
   const { data: activityLogs = [], isLoading: isLoadingActivity, error: activityError } = useQuery({
     queryKey: ['activity_logs', selectedCompanyId],
     queryFn: async () => {
-      if (!selectedCompanyId) return [];
+      if (!selectedCompanyId) {
+        console.log("No company selected, returning empty activity logs array");
+        return [];
+      }
       
       const { data, error } = await supabase
         .from('activity_logs')
@@ -82,10 +86,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         .eq('entity_type', 'outcome')
         .order('created_at', { ascending: false })
         .limit(10)
-        .returns<(Database["public"]["Tables"]["activity_logs"]["Row"] & {
-          user: Profile;
-          details: ActivityLogDetails;
-        })[]>();
+        .returns<ActivityLogWithProfile[]>();
 
       if (error) {
         console.error('Error fetching activity:', error);
