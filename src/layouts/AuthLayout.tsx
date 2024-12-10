@@ -47,9 +47,9 @@ export const AuthLayout = ({ children }: { children: React.ReactNode }) => {
     validateSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+      if (event === 'SIGNED_OUT' || event === 'SIGNED_IN' || event === 'USER_UPDATED') {
         if (mounted) {
-          setIsAuthenticated(false);
+          setIsAuthenticated(event === 'SIGNED_IN');
         }
       } else if (event === 'SIGNED_IN') {
         // Validate new session

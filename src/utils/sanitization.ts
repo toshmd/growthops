@@ -9,7 +9,6 @@ export const sanitizeInput = (input: string): string => {
     ALLOWED_ATTR: [], // Strip all attributes
     RETURN_DOM: false,
     RETURN_DOM_FRAGMENT: false,
-    RETURN_DOM_IMPORT: false,
     SANITIZE_DOM: true,
   });
 
