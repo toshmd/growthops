@@ -7,17 +7,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface OutcomesListProps {
-  groupedOutcomes: Record<string, any[]>;
+  outcomes: any[];
   searchQuery: string;
   onEdit: (goal: string) => void;
   onDelete: (goal: string) => void;
   onAddOutcome: (goal: string) => void;
   isLoading?: boolean;
+  isUpdating?: boolean;
+  isDeleting?: boolean;
   error?: Error | null;
 }
 
 const OutcomesList = ({ 
-  groupedOutcomes, 
+  outcomes, 
   searchQuery, 
   onEdit, 
   onDelete, 
@@ -25,7 +27,19 @@ const OutcomesList = ({
   isLoading,
   error
 }: OutcomesListProps) => {
-  // Memoize filtered outcomes to prevent unnecessary recalculations
+  // Group outcomes by goal
+  const groupedOutcomes = useMemo(() => {
+    return outcomes.reduce((acc: Record<string, any[]>, outcome) => {
+      const goal = outcome.title;
+      if (!acc[goal]) {
+        acc[goal] = [];
+      }
+      acc[goal].push(outcome);
+      return acc;
+    }, {});
+  }, [outcomes]);
+
+  // Memoize filtered outcomes
   const filteredOutcomes = useMemo(() => {
     return Object.entries(groupedOutcomes).reduce((acc: Record<string, any[]>, [goal, outcomes]) => {
       const filteredGoalOutcomes = outcomes.filter(
