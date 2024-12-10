@@ -45,64 +45,68 @@ const TopMenu = () => {
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          console.log('Loading profile for user:', user.id);
-          const { data, error } = await supabase
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        
+        if (!user) {
+          console.log('No authenticated user found');
+          navigate('/login');
+          return;
+        }
+
+        console.log('Loading profile for user:', user.id);
+        const { data: existingProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (profileError) {
+          console.error('Error loading profile:', profileError);
+          throw profileError;
+        }
+
+        if (existingProfile) {
+          console.log('Existing profile found:', existingProfile);
+          setProfile(existingProfile);
+        } else {
+          console.log('No profile found, creating new profile for user:', user.id);
+          const { data: newProfile, error: insertError } = await supabase
             .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle(); // Using maybeSingle() instead of single()
-          
-          if (error) {
-            console.error('Error loading profile:', error);
-            throw error;
-          }
-          
-          // If we got data, use it. Otherwise create a default profile object
-          if (data) {
-            console.log('Profile loaded:', data);
-            setProfile(data);
-          } else {
-            console.log('No profile found, creating default profile');
-            // Insert a new profile
-            const { data: newProfile, error: insertError } = await supabase
-              .from('profiles')
-              .insert([{ id: user.id }])
-              .select()
-              .single();
+            .insert([{ id: user.id }])
+            .select()
+            .single();
 
-            if (insertError) {
-              console.error('Error creating profile:', insertError);
-              throw insertError;
-            }
-
-            console.log('New profile created:', newProfile);
-            setProfile(newProfile);
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            throw insertError;
           }
+
+          console.log('New profile created:', newProfile);
+          setProfile(newProfile);
         }
       } catch (error: any) {
         console.error('Error in loadProfile:', error);
         toast({
           title: "Error loading profile",
-          description: "Please try refreshing the page",
+          description: error.message || "Please try refreshing the page",
           variant: "destructive",
         });
       }
     };
 
     loadProfile();
-  }, [toast]);
+  }, [navigate, toast]);
 
   const handleLogout = useCallback(async () => {
     try {
       await supabase.auth.signOut();
       navigate('/login');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error during logout:', error);
       toast({
         title: "Error signing out",
-        description: "Please try again",
+        description: error.message || "Please try again",
         variant: "destructive",
       });
     }
