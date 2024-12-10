@@ -1,0 +1,141 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
+
+export const useOutcomesData = (selectedYear: string, selectedCompanyId: string | null) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Validate year
+  const isValidYear = /^\d{4}$/.test(selectedYear) && 
+    parseInt(selectedYear) >= 1900 && 
+    parseInt(selectedYear) <= new Date().getFullYear() + 10;
+
+  if (!isValidYear) {
+    console.error("Invalid year:", selectedYear);
+    throw new Error("Invalid year selected");
+  }
+
+  const { data: outcomes = [], isLoading, error } = useQuery({
+    queryKey: ['outcomes', selectedYear, selectedCompanyId],
+    queryFn: async () => {
+      if (!selectedCompanyId) {
+        throw new Error("No company selected");
+      }
+
+      const { data, error } = await supabase
+        .from('outcomes')
+        .select('*')
+        .eq('company_id', selectedCompanyId)
+        .gte('start_date', `${selectedYear}-01-01`)
+        .lte('start_date', `${selectedYear}-12-31`);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedCompanyId && isValidYear,
+  });
+
+  // Add outcome mutation
+  const addOutcomeMutation = useMutation({
+    mutationFn: async (title: string) => {
+      if (!selectedCompanyId) {
+        throw new Error("No company selected");
+      }
+
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("Not authenticated");
+      }
+
+      const { data, error } = await supabase
+        .from('outcomes')
+        .insert([
+          {
+            title,
+            company_id: selectedCompanyId,
+            interval: 'monthly',
+            start_date: new Date().toISOString(),
+            next_due: new Date().toISOString(),
+            description: '',
+            created_by: session.session.user.id
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to add outcome. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update outcome mutation
+  const updateOutcomeMutation = useMutation({
+    mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      const { error } = await supabase
+        .from('outcomes')
+        .update({ title })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update outcome. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete outcome mutation
+  const deleteOutcomeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('outcomes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete outcome. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      queryClient.cancelQueries({ queryKey: ['outcomes', selectedYear, selectedCompanyId] });
+    };
+  }, [queryClient, selectedYear, selectedCompanyId]);
+
+  return {
+    outcomes,
+    isLoading,
+    error,
+    addOutcomeMutation,
+    updateOutcomeMutation,
+    deleteOutcomeMutation
+  };
+};
