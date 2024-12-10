@@ -12,7 +12,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useCompany } from "@/contexts/CompanyContext";
 import ErrorBoundary from "../advisor/ErrorBoundary";
 import QueryErrorBoundary from "../common/QueryErrorBoundary";
 import { Team, TeamMember } from "@/types/team-metrics";
@@ -20,15 +19,12 @@ import { DbProfile } from "@/types/database";
 
 const TeamPerformanceMetrics = () => {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([]);
-  const { selectedCompanyId } = useCompany();
 
   const { data: teams = [], isLoading, error, refetch } = useQuery<Team[]>({
-    queryKey: ['team-performance', selectedCompanyId],
+    queryKey: ['team-performance'],
     queryFn: async () => {
-      console.log('Fetching team performance data for company:', selectedCompanyId);
+      console.log('Fetching team performance data');
       
-      if (!selectedCompanyId) return [];
-
       const { data: teamsData, error: teamsError } = await supabase
         .from('teams')
         .select(`
@@ -96,7 +92,6 @@ const TeamPerformanceMetrics = () => {
       console.log('Fetched team performance data:', teamsWithMetrics);
       return teamsWithMetrics;
     },
-    enabled: !!selectedCompanyId,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     meta: {

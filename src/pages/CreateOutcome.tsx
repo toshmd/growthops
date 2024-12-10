@@ -5,7 +5,6 @@ import { Form } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/CompanyContext";
 import OutcomeFormFields, { formSchema } from "@/components/outcome/OutcomeFormFields";
 import * as z from "zod";
 import { useEffect } from "react";
@@ -18,7 +17,6 @@ interface CreateProcessProps {
 
 const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   const { toast } = useToast();
-  const { selectedCompanyId } = useCompany();
   const navigate = useNavigate();
 
   // Check authentication status
@@ -40,12 +38,11 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   
   // Fetch existing goals (outcomes without parent_outcome_id)
   const { data: existingGoals = [] } = useQuery({
-    queryKey: ['goals', selectedCompanyId],
+    queryKey: ['goals'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('outcomes')
         .select('title')
-        .eq('company_id', selectedCompanyId)
         .is('parent_outcome_id', null);
       
       if (error) {
@@ -59,7 +56,6 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
       }
       return data.map(outcome => outcome.title.split(':')[0] || outcome.title);
     },
-    enabled: !!selectedCompanyId,
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -76,10 +72,6 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
 
   const createOutcomeMutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
-      if (!selectedCompanyId) {
-        throw new Error("No company selected");
-      }
-
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("Not authenticated");
@@ -96,7 +88,6 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
               interval: values.interval,
               start_date: values.startDate.toISOString(),
               next_due: values.startDate.toISOString(),
-              company_id: selectedCompanyId,
               created_by: session.user.id,
             }
           ])
@@ -131,14 +122,6 @@ const CreateProcess = ({ selectedYear, onSuccess }: CreateProcessProps) => {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    if (!selectedCompanyId) {
-      toast({
-        title: "Error",
-        description: "Please select a company first.",
-        variant: "destructive",
-      });
-      return;
-    }
     createOutcomeMutation.mutate(values);
   };
 

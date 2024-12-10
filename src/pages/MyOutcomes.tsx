@@ -4,7 +4,6 @@ import OutcomeCard from "@/components/outcome/OutcomeCard";
 import OutcomeStatistics from "@/components/outcome/OutcomeStatistics";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/CompanyContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, Plus } from "lucide-react";
@@ -14,16 +13,14 @@ import { CreateOutcomeDialog } from "@/components/outcome/CreateOutcomeDialog";
 const MyOutcomes = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { selectedCompanyId } = useCompany();
 
   // Fetch outcomes from Supabase
   const { data: outcomes, isLoading } = useQuery({
-    queryKey: ['my-outcomes', selectedCompanyId],
+    queryKey: ['my-outcomes'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('outcomes')
         .select('*')
-        .eq('company_id', selectedCompanyId)
         .order('next_due', { ascending: true });
 
       if (error) {
@@ -48,10 +45,8 @@ const MyOutcomes = () => {
         reportingDates: [],
       }));
     },
-    enabled: !!selectedCompanyId,
   });
 
-  // Update outcome status mutation
   const updateOutcomeMutation = useMutation({
     mutationFn: async ({ outcomeId, status, notes }: { outcomeId: number, status: string, notes: string }) => {
       const { error } = await supabase
