@@ -2,7 +2,7 @@ import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
@@ -12,39 +12,55 @@ import { sanitizeInput } from "@/utils/sanitization";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast, dismiss } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    // Set up mounted ref
+    isMounted.current = true;
+
+    // Cleanup function
+    return () => {
+      isMounted.current = false;
+      // Clear any active toasts on unmount
+      dismiss();
+    };
+  }, [dismiss]);
 
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
+      // Only proceed if component is mounted
+      if (!isMounted.current) return;
+
       console.log("Auth state changed:", event, session);
       
-      // Sanitize any user input before displaying in toast messages
       const sanitizedEvent = sanitizeInput(event);
       
       if (event === 'SIGNED_IN' && session) {
-        // Store the UTC timestamp of the login
         const loginTime = new Date().toISOString();
         console.log("User signed in at (UTC):", loginTime);
         
-        toast({
-          title: "Welcome back!",
-          description: "You have been successfully signed in.",
-        });
-        navigate("/");
-      } else if (event === 'SIGNED_OUT') {
+        if (isMounted.current) {
+          toast({
+            title: "Welcome back!",
+            description: "You have been successfully signed in.",
+          });
+          navigate("/");
+        }
+      } else if (event === 'SIGNED_OUT' && isMounted.current) {
         toast({
           title: "Signed out",
           description: "You have been signed out successfully",
         });
-      } else if (event === 'USER_DELETED') {
+      } else if (event === 'USER_DELETED' && isMounted.current) {
         toast({
           variant: "destructive",
           title: "Account Deleted",
           description: "Your account has been deleted",
         });
-      } else if (event === 'PASSWORD_RECOVERY') {
+      } else if (event === 'PASSWORD_RECOVERY' && isMounted.current) {
         toast({
           title: "Password Recovery",
           description: "Check your email for password reset instructions",
@@ -52,7 +68,6 @@ const Login = () => {
       }
     };
 
-    // Check existing session with error handling
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -61,27 +76,31 @@ const Login = () => {
           throw error;
         }
         
-        if (session) {
+        if (session && isMounted.current) {
           console.log("Existing session found at (UTC):", new Date().toISOString());
           navigate("/");
         }
       } catch (error: any) {
         console.error("Session check error:", error);
-        setAuthError(sanitizeInput(error.message));
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to check login status. Please try again.",
-        });
+        if (isMounted.current) {
+          setAuthError(sanitizeInput(error.message));
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to check login status. Please try again.",
+          });
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     // Initial session check
     checkSession();
 
-    // Subscribe to auth changes
+    // Subscribe to auth changes with cleanup
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     return () => {
