@@ -47,27 +47,42 @@ const TopMenu = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
+          console.log('Loading profile for user:', user.id);
           const { data, error } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle(); // Using maybeSingle() instead of single()
           
-          if (error && error.code !== 'PGRST116') {
+          if (error) {
             console.error('Error loading profile:', error);
             throw error;
           }
           
           // If we got data, use it. Otherwise create a default profile object
-          setProfile(data || {
-            id: user.id,
-            first_name: null,
-            last_name: null,
-            title: null
-          });
+          if (data) {
+            console.log('Profile loaded:', data);
+            setProfile(data);
+          } else {
+            console.log('No profile found, creating default profile');
+            // Insert a new profile
+            const { data: newProfile, error: insertError } = await supabase
+              .from('profiles')
+              .insert([{ id: user.id }])
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+              throw insertError;
+            }
+
+            console.log('New profile created:', newProfile);
+            setProfile(newProfile);
+          }
         }
       } catch (error: any) {
-        console.error('Error loading profile:', error);
+        console.error('Error in loadProfile:', error);
         toast({
           title: "Error loading profile",
           description: "Please try refreshing the page",
