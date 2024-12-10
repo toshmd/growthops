@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
 
-export const useOutcomesData = (selectedYear: string, selectedCompanyId: string | null) => {
+export const useOutcomesData = (selectedYear: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -18,21 +18,21 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
   }
 
   const { data: outcomes = [], isLoading, error } = useQuery({
-    queryKey: ['outcomes', selectedYear, selectedCompanyId],
+    queryKey: ['my-outcomes', selectedYear],
     queryFn: async () => {
-      console.log('Fetching outcomes for year:', selectedYear, 'and company:', selectedCompanyId);
+      console.log('Fetching outcomes for year:', selectedYear);
       
-      if (!selectedCompanyId) {
-        throw new Error("No company selected");
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        throw new Error("Not authenticated");
       }
 
       const { data, error } = await supabase
         .from('outcomes')
         .select('*')
-        .eq('company_id', selectedCompanyId)
         .gte('start_date', `${selectedYear}-01-01`)
         .lte('start_date', `${selectedYear}-12-31`);
-      
+
       if (error) {
         console.error('Error fetching outcomes:', error);
         throw error;
@@ -41,7 +41,7 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
       console.log('Fetched outcomes:', data);
       return data;
     },
-    enabled: !!selectedCompanyId && isValidYear,
+    enabled: isValidYear,
     retry: 3,
     retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     meta: {
@@ -54,10 +54,6 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
     mutationFn: async (title: string) => {
       console.log('Adding outcome:', title);
       
-      if (!selectedCompanyId) {
-        throw new Error("No company selected");
-      }
-
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
         throw new Error("Not authenticated");
@@ -68,7 +64,6 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
         .insert([
           {
             title,
-            company_id: selectedCompanyId,
             interval: 'monthly',
             start_date: new Date().toISOString(),
             next_due: new Date().toISOString(),
@@ -82,13 +77,13 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+      queryClient.invalidateQueries({ queryKey: ['my-outcomes'] });
       toast({
         title: "Success",
         description: "Outcome added successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Error adding outcome:', error);
       toast({
         title: "Error",
@@ -111,13 +106,13 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+      queryClient.invalidateQueries({ queryKey: ['my-outcomes'] });
       toast({
         title: "Success",
         description: "Outcome updated successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Error updating outcome:', error);
       toast({
         title: "Error",
@@ -140,13 +135,13 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+      queryClient.invalidateQueries({ queryKey: ['my-outcomes'] });
       toast({
         title: "Success",
         description: "Outcome deleted successfully",
       });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       console.error('Error deleting outcome:', error);
       toast({
         title: "Error",
@@ -159,9 +154,9 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      queryClient.cancelQueries({ queryKey: ['outcomes', selectedYear, selectedCompanyId] });
+      queryClient.cancelQueries({ queryKey: ['my-outcomes', selectedYear] });
     };
-  }, [queryClient, selectedYear, selectedCompanyId]);
+  }, [queryClient, selectedYear]);
 
   return {
     outcomes,

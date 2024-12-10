@@ -8,13 +8,11 @@ import DeleteConfirmDialog from "@/components/manage-outcomes/DeleteConfirmDialo
 import EditGoalDialog from "@/components/manage-outcomes/EditGoalDialog";
 import AddGoalForm from "@/components/manage-outcomes/AddGoalForm";
 import ManageOutcomesLoading from "@/components/manage-outcomes/ManageOutcomesLoading";
-import { useCompany } from "@/contexts/CompanyContext";
 import { useOutcomesData } from "@/hooks/useOutcomesData";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const ManageOutcomes = () => {
   const { toast } = useToast();
-  const { selectedCompanyId } = useCompany();
   const [newGoal, setNewGoal] = useState("");
   const [showCreateOutcome, setShowCreateOutcome] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState("");
@@ -39,18 +37,9 @@ const ManageOutcomes = () => {
     addOutcomeMutation,
     updateOutcomeMutation,
     deleteOutcomeMutation
-  } = useOutcomesData(selectedYear, selectedCompanyId);
+  } = useOutcomesData(selectedYear);
 
   const handleAddGoal = () => {
-    if (!selectedCompanyId) {
-      toast({
-        title: "Error",
-        description: "Please select a company first.",
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (newGoal.trim()) {
       addOutcomeMutation.mutate(newGoal, {
         onSuccess: () => {

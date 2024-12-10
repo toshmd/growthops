@@ -4,27 +4,23 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/CompanyContext";
 import CreateOutcome from "@/pages/CreateOutcome";
 
 export function CreateOutcomeDialog() {
   const [open, setOpen] = useState(false);
-  const { selectedCompanyId } = useCompany();
   
   // Fetch existing goals (outcomes without parent_outcome_id)
   const { data: goals } = useQuery({
-    queryKey: ['goals', selectedCompanyId],
+    queryKey: ['goals'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('outcomes')
         .select('*')
-        .eq('company_id', selectedCompanyId)
         .is('parent_outcome_id', null);
       
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedCompanyId,
   });
 
   // Only show dialog if there are existing goals
