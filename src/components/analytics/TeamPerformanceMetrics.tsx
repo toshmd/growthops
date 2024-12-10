@@ -34,8 +34,13 @@ const TeamPerformanceMetrics = () => {
           people (
             user_id,
             profiles!inner (
+              id,
               first_name,
-              last_name
+              last_name,
+              phone,
+              title,
+              created_at,
+              updated_at
             )
           )
         `);
