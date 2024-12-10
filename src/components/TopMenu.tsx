@@ -10,14 +10,15 @@ import {
 import { Settings, LogOut } from "lucide-react";
 import { useState, useEffect, memo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const ProfileInfo = memo(({ profile }: { profile: any }) => (
   <div className="flex flex-col space-y-1 p-2">
     <p className="text-sm font-medium text-foreground">
-      {profile ? `${profile.first_name} ${profile.last_name}` : 'Loading...'}
+      {profile ? `${profile.first_name || 'New'} ${profile.last_name || 'User'}` : 'Loading...'}
     </p>
     <p className="text-xs text-muted-foreground">
-      {profile?.title || 'No title set'}
+      {profile?.title || 'Welcome! Update your profile in settings.'}
     </p>
   </div>
 ));
@@ -30,7 +31,7 @@ const AvatarComponent = memo(({ profile }: { profile: any }) => (
       alt={profile?.first_name ? `${profile.first_name}'s avatar` : 'User avatar'} 
     />
     <AvatarFallback aria-label="User initials">
-      {profile ? `${profile.first_name?.[0]}${profile.last_name?.[0]}` : '??'}
+      {profile ? `${profile.first_name?.[0] || 'N'}${profile.last_name?.[0] || 'U'}` : '??'}
     </AvatarFallback>
   </Avatar>
 ));
@@ -39,6 +40,7 @@ AvatarComponent.displayName = 'AvatarComponent';
 const TopMenu = () => {
   const [profile, setProfile] = useState<any>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -51,16 +53,31 @@ const TopMenu = () => {
             .eq('id', user.id)
             .single();
           
-          if (error) throw error;
-          setProfile(data);
+          if (error && error.code !== 'PGRST116') {
+            console.error('Error loading profile:', error);
+            throw error;
+          }
+          
+          // If we got data, use it. Otherwise create a default profile object
+          setProfile(data || {
+            id: user.id,
+            first_name: null,
+            last_name: null,
+            title: null
+          });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading profile:', error);
+        toast({
+          title: "Error loading profile",
+          description: "Please try refreshing the page",
+          variant: "destructive",
+        });
       }
     };
 
     loadProfile();
-  }, []);
+  }, [toast]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -68,8 +85,13 @@ const TopMenu = () => {
       navigate('/login');
     } catch (error) {
       console.error('Error during logout:', error);
+      toast({
+        title: "Error signing out",
+        description: "Please try again",
+        variant: "destructive",
+      });
     }
-  }, [navigate]);
+  }, [navigate, toast]);
 
   return (
     <header 
