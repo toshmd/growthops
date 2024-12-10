@@ -1,3 +1,10 @@
+import { ActivityLogsTable } from './activity-logs'
+import { OutcomesTable } from './outcomes'
+import { PeopleTable } from './people'
+import { ProfilesTable } from './profiles'
+import { TasksTable } from './tasks'
+import { TeamsTable } from './teams'
+
 export type Json =
   | string
   | number
