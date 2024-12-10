@@ -15,14 +15,17 @@ const DueThisWeek = ({ outcomes, isLoading }: DueThisWeekProps) => {
     return (
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-4">
-          <CalendarDays className="h-5 w-5 text-blue-500" />
-          <h3 className="text-lg font-semibold">Due This Week</h3>
+          <Skeleton className="h-5 w-5 rounded" />
+          <Skeleton className="h-6 w-32" />
         </div>
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex justify-between items-center">
+            <div key={i} className="flex flex-col space-y-2 animate-pulse">
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-5 w-48" />
+                <Skeleton className="h-5 w-20" />
+              </div>
               <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-4 w-20" />
             </div>
           ))}
         </div>
@@ -56,8 +59,8 @@ const DueThisWeek = ({ outcomes, isLoading }: DueThisWeekProps) => {
       <div className="space-y-3">
         {outcomes.map((outcome) => (
           <div key={outcome.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
-            <div>
-              <p className="font-medium text-gray-900">{outcome.title}</p>
+            <div className="flex-1 min-w-0 pr-4">
+              <p className="font-medium text-gray-900 truncate">{outcome.title}</p>
               <p className="text-xs text-gray-500">
                 Due: {format(new Date(outcome.nextDue), "MMM d")}
               </p>

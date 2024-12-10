@@ -17,11 +17,13 @@ const ProcessTimeline = ({ process }: ProcessTimelineProps) => {
               process.status === "done" ? "bg-success" : 
               isPast(date) ? "bg-destructive" : "bg-gray-300"
             }`} />
-            <DateCard
-              date={date}
-              process={process}
-              status={process.status}
-            />
+            <div className="max-w-full overflow-hidden">
+              <DateCard
+                date={date}
+                process={process}
+                status={process.status}
+              />
+            </div>
           </div>
         ))}
       </div>
