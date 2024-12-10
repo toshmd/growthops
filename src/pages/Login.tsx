@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import ErrorBoundary from "@/components/advisor/ErrorBoundary";
+import { sanitizeInput } from "@/utils/sanitization";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,8 +17,11 @@ const Login = () => {
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleAuthChange = (event: string, session: any) => {
+    const handleAuthChange = async (event: string, session: any) => {
       console.log("Auth state changed:", event, session);
+      
+      // Sanitize any user input before displaying in toast messages
+      const sanitizedEvent = sanitizeInput(event);
       
       if (event === 'SIGNED_IN' && session) {
         toast({
@@ -44,11 +48,14 @@ const Login = () => {
       }
     };
 
-    // Check existing session
+    // Check existing session with error handling
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        if (error) {
+          console.error("Session check error:", error);
+          throw error;
+        }
         
         if (session) {
           console.log("Existing session found, redirecting to dashboard");
@@ -56,7 +63,7 @@ const Login = () => {
         }
       } catch (error: any) {
         console.error("Session check error:", error);
-        setAuthError(error.message);
+        setAuthError(sanitizeInput(error.message));
         toast({
           variant: "destructive",
           title: "Error",
@@ -78,6 +85,7 @@ const Login = () => {
     };
   }, [navigate, toast]);
 
+  // Loading state with fallback UI
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -88,6 +96,17 @@ const Login = () => {
       </div>
     );
   }
+
+  // Error boundary fallback component
+  const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Alert variant="destructive" className="max-w-md">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Authentication Error</AlertTitle>
+        <AlertDescription>{sanitizeInput(error.message)}</AlertDescription>
+      </Alert>
+    </div>
+  );
 
   const LoginContent = () => (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -131,7 +150,7 @@ const Login = () => {
   );
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary fallback={<ErrorFallback error={new Error(authError || 'Unknown error')} resetErrorBoundary={() => setAuthError(null)} />}>
       <LoginContent />
     </ErrorBoundary>
   );
