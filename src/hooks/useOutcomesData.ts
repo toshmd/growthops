@@ -20,6 +20,8 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
   const { data: outcomes = [], isLoading, error } = useQuery({
     queryKey: ['outcomes', selectedYear, selectedCompanyId],
     queryFn: async () => {
+      console.log('Fetching outcomes for year:', selectedYear, 'and company:', selectedCompanyId);
+      
       if (!selectedCompanyId) {
         throw new Error("No company selected");
       }
@@ -31,15 +33,27 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
         .gte('start_date', `${selectedYear}-01-01`)
         .lte('start_date', `${selectedYear}-12-31`);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching outcomes:', error);
+        throw error;
+      }
+      
+      console.log('Fetched outcomes:', data);
       return data;
     },
     enabled: !!selectedCompanyId && isValidYear,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    meta: {
+      errorMessage: "Failed to load outcomes"
+    }
   });
 
   // Add outcome mutation
   const addOutcomeMutation = useMutation({
     mutationFn: async (title: string) => {
+      console.log('Adding outcome:', title);
+      
       if (!selectedCompanyId) {
         throw new Error("No company selected");
       }
@@ -69,8 +83,13 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+      toast({
+        title: "Success",
+        description: "Outcome added successfully",
+      });
     },
     onError: (error: Error) => {
+      console.error('Error adding outcome:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to add outcome. Please try again.",
@@ -82,6 +101,8 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
   // Update outcome mutation
   const updateOutcomeMutation = useMutation({
     mutationFn: async ({ id, title }: { id: string; title: string }) => {
+      console.log('Updating outcome:', id, title);
+      
       const { error } = await supabase
         .from('outcomes')
         .update({ title })
@@ -91,8 +112,13 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+      toast({
+        title: "Success",
+        description: "Outcome updated successfully",
+      });
     },
     onError: (error: Error) => {
+      console.error('Error updating outcome:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update outcome. Please try again.",
@@ -104,6 +130,8 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
   // Delete outcome mutation
   const deleteOutcomeMutation = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deleting outcome:', id);
+      
       const { error } = await supabase
         .from('outcomes')
         .delete()
@@ -113,8 +141,13 @@ export const useOutcomesData = (selectedYear: string, selectedCompanyId: string 
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['outcomes'] });
+      toast({
+        title: "Success",
+        description: "Outcome deleted successfully",
+      });
     },
     onError: (error: Error) => {
+      console.error('Error deleting outcome:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to delete outcome. Please try again.",

@@ -29,10 +29,11 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
   const { data: outcomes = [], isLoading: isLoadingOutcomes, error: outcomesError } = useQuery({
     queryKey: ['dashboard-outcomes', selectedCompanyId],
     queryFn: async () => {
+      console.log('Fetching dashboard outcomes for company:', selectedCompanyId);
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("No authenticated user");
 
-      // If no company is selected, return empty array instead of throwing error
       if (!selectedCompanyId) {
         console.log("No company selected, returning empty outcomes array");
         return [];
@@ -55,12 +56,15 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         throw error;
       }
 
+      console.log('Fetched dashboard outcomes:', data);
       return data.map(outcome => ({
         ...outcome,
         created_by_profile: outcome.created_by_profile || { first_name: null, last_name: null }
       }));
     },
     enabled: !!selectedCompanyId,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     meta: {
       errorMessage: "Failed to load outcomes"
     }
@@ -69,6 +73,8 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
   const { data: activityLogs = [], isLoading: isLoadingActivity, error: activityError } = useQuery({
     queryKey: ['activity_logs', selectedCompanyId],
     queryFn: async () => {
+      console.log('Fetching activity logs for company:', selectedCompanyId);
+      
       if (!selectedCompanyId) {
         console.log("No company selected, returning empty activity logs array");
         return [];
@@ -93,6 +99,7 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
         throw error;
       }
 
+      console.log('Fetched activity logs:', data);
       return data.map(log => ({
         ...log,
         user: log.user || { first_name: null, last_name: null },
@@ -100,6 +107,8 @@ export const useDashboardData = (selectedCompanyId: string | null) => {
       }));
     },
     enabled: !!selectedCompanyId,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
     meta: {
       errorMessage: "Failed to load activity logs"
     }

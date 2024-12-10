@@ -14,6 +14,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
 import { useCompany } from "@/contexts/CompanyContext";
 import ErrorBoundary from "../advisor/ErrorBoundary";
+import QueryErrorBoundary from "../common/QueryErrorBoundary";
 import { Team, TeamMember } from "@/types/team-metrics";
 import { DbProfile } from "@/types/database";
 
@@ -21,9 +22,11 @@ const TeamPerformanceMetrics = () => {
   const [expandedTeams, setExpandedTeams] = useState<string[]>([]);
   const { selectedCompanyId } = useCompany();
 
-  const { data: teams = [], isLoading, error } = useQuery<Team[]>({
+  const { data: teams = [], isLoading, error, refetch } = useQuery<Team[]>({
     queryKey: ['team-performance', selectedCompanyId],
     queryFn: async () => {
+      console.log('Fetching team performance data for company:', selectedCompanyId);
+      
       if (!selectedCompanyId) return [];
 
       const { data: teamsData, error: teamsError } = await supabase
@@ -90,26 +93,23 @@ const TeamPerformanceMetrics = () => {
         };
       }));
 
+      console.log('Fetched team performance data:', teamsWithMetrics);
       return teamsWithMetrics;
     },
-    enabled: !!selectedCompanyId
+    enabled: !!selectedCompanyId,
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    meta: {
+      errorMessage: "Failed to load team performance data"
+    }
   });
-
-  const toggleTeam = (teamId: string) => {
-    setExpandedTeams(current =>
-      current.includes(teamId)
-        ? current.filter(id => id !== teamId)
-        : [...current, teamId]
-    );
-  };
 
   if (error) {
     return (
-      <Card className="p-6">
-        <div className="text-center text-red-500">
-          Error loading team performance data
-        </div>
-      </Card>
+      <QueryErrorBoundary 
+        error={error instanceof Error ? error : new Error('An unexpected error occurred')} 
+        resetErrorBoundary={() => refetch()} 
+      />
     );
   }
 
@@ -127,6 +127,14 @@ const TeamPerformanceMetrics = () => {
       </Card>
     );
   }
+
+  const toggleTeam = (teamId: string) => {
+    setExpandedTeams(current =>
+      current.includes(teamId)
+        ? current.filter(id => id !== teamId)
+        : [...current, teamId]
+    );
+  };
 
   return (
     <Card className="p-6">
