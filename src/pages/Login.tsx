@@ -16,61 +16,76 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const isMounted = useRef(true);
+  const authChangeInProgress = useRef(false);
 
   useEffect(() => {
-    // Set up mounted ref
     isMounted.current = true;
-
-    // Cleanup function
     return () => {
       isMounted.current = false;
-      // Clear any active toasts on unmount
       dismiss();
     };
   }, [dismiss]);
 
   useEffect(() => {
     const handleAuthChange = async (event: string, session: any) => {
-      // Only proceed if component is mounted
-      if (!isMounted.current) return;
+      if (!isMounted.current || authChangeInProgress.current) return;
 
-      console.log("Auth state changed:", event, session);
-      
-      const sanitizedEvent = sanitizeInput(event);
-      
-      if (event === 'SIGNED_IN' && session) {
-        const loginTime = new Date().toISOString();
-        console.log("User signed in at (UTC):", loginTime);
+      try {
+        authChangeInProgress.current = true;
+        console.log("Auth state changed:", event, session);
         
+        const sanitizedEvent = sanitizeInput(event);
+        
+        if (event === 'SIGNED_IN' && session) {
+          const loginTime = new Date().toISOString();
+          console.log("User signed in at (UTC):", loginTime);
+          
+          if (isMounted.current) {
+            toast({
+              title: "Welcome back!",
+              description: "You have been successfully signed in.",
+            });
+            navigate("/");
+          }
+        } else if (event === 'SIGNED_OUT' && isMounted.current) {
+          toast({
+            title: "Signed out",
+            description: "You have been signed out successfully",
+          });
+        } else if (event === 'USER_DELETED' && isMounted.current) {
+          toast({
+            variant: "destructive",
+            title: "Account Deleted",
+            description: "Your account has been deleted",
+          });
+        } else if (event === 'PASSWORD_RECOVERY' && isMounted.current) {
+          toast({
+            title: "Password Recovery",
+            description: "Check your email for password reset instructions",
+          });
+        }
+      } catch (error) {
+        console.error("Auth change error:", error);
         if (isMounted.current) {
           toast({
-            title: "Welcome back!",
-            description: "You have been successfully signed in.",
+            variant: "destructive",
+            title: "Error",
+            description: "An error occurred during authentication",
           });
-          navigate("/");
         }
-      } else if (event === 'SIGNED_OUT' && isMounted.current) {
-        toast({
-          title: "Signed out",
-          description: "You have been signed out successfully",
-        });
-      } else if (event === 'USER_DELETED' && isMounted.current) {
-        toast({
-          variant: "destructive",
-          title: "Account Deleted",
-          description: "Your account has been deleted",
-        });
-      } else if (event === 'PASSWORD_RECOVERY' && isMounted.current) {
-        toast({
-          title: "Password Recovery",
-          description: "Check your email for password reset instructions",
-        });
+      } finally {
+        authChangeInProgress.current = false;
       }
     };
 
+    let isCheckingSession = false;
     const checkSession = async () => {
+      if (isCheckingSession) return;
+      
       try {
+        isCheckingSession = true;
         const { data: { session }, error } = await supabase.auth.getSession();
+        
         if (error) {
           console.error("Session check error:", error);
           throw error;
@@ -91,16 +106,15 @@ const Login = () => {
           });
         }
       } finally {
+        isCheckingSession = false;
         if (isMounted.current) {
           setIsLoading(false);
         }
       }
     };
 
-    // Initial session check
     checkSession();
 
-    // Subscribe to auth changes with cleanup
     const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthChange);
 
     return () => {
@@ -108,7 +122,6 @@ const Login = () => {
     };
   }, [navigate, toast]);
 
-  // Loading state with fallback UI
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -120,7 +133,6 @@ const Login = () => {
     );
   }
 
-  // Error boundary fallback component
   const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Alert variant="destructive" className="max-w-md">
