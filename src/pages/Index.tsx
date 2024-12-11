@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompany } from "@/contexts/CompanyContext";
 import { isWithinInterval, startOfWeek, endOfWeek, parseISO } from "date-fns";
 import WelcomeHeader from "@/components/dashboard/WelcomeHeader";
 import CompletionChart from "@/components/dashboard/CompletionChart";
@@ -14,7 +13,6 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { calculateDashboardStats, mapOutcomesToDueThisWeek } from "@/components/dashboard/DashboardStats";
 
 const Index = () => {
-  const { selectedCompanyId } = useCompany();
   const queryClient = useQueryClient();
   
   const {
@@ -24,7 +22,7 @@ const Index = () => {
     isLoadingActivity,
     outcomesError,
     activityError
-  } = useDashboardData(selectedCompanyId);
+  } = useDashboardData(null);
 
   // Memoize date calculations
   const dates = useMemo(() => {
@@ -74,8 +72,6 @@ const Index = () => {
 
   // Subscribe to real-time updates
   useEffect(() => {
-    if (!selectedCompanyId) return;
-
     const outcomeChannel = supabase
       .channel('outcomes_changes')
       .on(
@@ -83,8 +79,7 @@ const Index = () => {
         {
           event: '*',
           schema: 'public',
-          table: 'outcomes',
-          filter: `company_id=eq.${selectedCompanyId}`,
+          table: 'outcomes'
         },
         handleOutcomesChange
       )
@@ -108,7 +103,7 @@ const Index = () => {
       outcomeChannel.unsubscribe();
       activityChannel.unsubscribe();
     };
-  }, [selectedCompanyId, handleOutcomesChange, handleActivityChange]);
+  }, [handleOutcomesChange, handleActivityChange]);
 
   if (outcomesError || activityError) {
     return (
