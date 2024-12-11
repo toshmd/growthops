@@ -41,8 +41,8 @@ const TeamModal = ({ isOpen, onClose, team }: TeamModalProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: team?.name || "",
+      description: team?.description || "",
     },
   });
 
