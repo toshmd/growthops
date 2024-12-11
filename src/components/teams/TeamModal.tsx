@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Team } from "@/types/team";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   name: z.string().min(2, "Team name must be at least 2 characters"),
@@ -34,6 +36,8 @@ interface TeamModalProps {
 
 const TeamModal = ({ isOpen, onClose, team }: TeamModalProps) => {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -59,18 +63,42 @@ const TeamModal = ({ isOpen, onClose, team }: TeamModalProps) => {
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
       if (team) {
+        const { error } = await supabase
+          .from('teams')
+          .update({
+            name: data.name,
+            description: data.description,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', team.id);
+
+        if (error) throw error;
+
         toast({
           title: "Team updated",
           description: "Team has been updated successfully.",
         });
       } else {
+        const { error } = await supabase
+          .from('teams')
+          .insert({
+            name: data.name,
+            description: data.description,
+          });
+
+        if (error) throw error;
+
         toast({
           title: "Team created",
           description: "New team has been created successfully.",
         });
       }
+      
+      // Invalidate and refetch teams data
+      await queryClient.invalidateQueries({ queryKey: ['teams'] });
       onClose();
     } catch (error) {
+      console.error('Error saving team:', error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",
